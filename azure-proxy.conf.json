@@ -1,0 +1,8 @@
+{
+    "/mgmt/*": {
+        "target": "https://edgar-azure-0.westus2.cloudapp.azure.com",
+        "secure": false,
+        "logLevel": "debug",
+        "changeOrigin": true
+    }
+}
