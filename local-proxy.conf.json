@@ -1,8 +1,0 @@
-{
-    "/mgmt/*": {
-        "target": "https://10.1.1.245",
-        "secure": false,
-        "logLevel": "debug",
-        "changeOrigin": true
-    }
-}
