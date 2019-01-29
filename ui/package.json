@@ -1,6 +1,6 @@
 {
   "name": "bigip-blue-green",
-  "version": "0.0.0",
+  "version": "0.5.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -8,7 +8,7 @@
     "start-proxy-azure": "ng serve --proxy-config azure-proxy.conf.json",
     "load-test": "locust -f load/load-test.py",
     "build": "ng build",
-    "build-prod": "ng build --prod --base-href /iapps/sample/",
+    "build-prod": "ng build --prod --base-href /iapps/bigip-blue-green/",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"

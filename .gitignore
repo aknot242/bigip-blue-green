@@ -45,3 +45,4 @@ azure-proxy.conf.json
 local-proxy.conf.json
 .vscode/settings.json
 *.pyc
+rpmbuild

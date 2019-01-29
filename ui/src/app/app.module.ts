@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MatButtonModule, MatFormFieldModule, MatSliderModule, MatSelectModule, MatInputModule } from '@angular/material';
+import { MatButtonModule, MatFormFieldModule, MatSliderModule, MatSelectModule, MatInputModule, MatSnackBarModule, MAT_SNACK_BAR_DEFAULT_OPTIONS } from '@angular/material';
 import { BigIpService } from './bigip/services/bigip.service';
 import { HttpClientModule, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
 import { BigIpConfig } from './bigip/models/bigip-config';
@@ -39,10 +39,12 @@ const bigIpConfig: BigIpConfig = {
     MatSliderModule,
     MatSelectModule,
     MatInputModule,
+    MatSnackBarModule,
     NgHttpLoaderModule.forRoot()
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    { provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: { duration: 2500 } },
     BigIpService,
     AuthService,
     HttpClient

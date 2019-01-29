@@ -17,12 +17,11 @@ BlueGreen deployment controller for BIG-IP
 
 %prep
 rm -rf %{_builddir}/*
-cp %{main}/manifest.json %{_builddir}
-cp %{main}/package.json %{_builddir}
-cp -r %{main}/nodejs %{_builddir}
-cp -r %{main}/node_modules %{_builddir}/nodejs
-cp -r %{main}/schema %{_builddir}
-cp -r %{main}/examples %{_builddir}
+cp %{main}/api/manifest.json %{_builddir}
+cp %{main}/api/package.json %{_builddir}
+cp -r %{main}/api/nodejs %{_builddir}
+cp -r %{main}/api/node_modules %{_builddir}/nodejs
+cp -r %{main}/ui/dist/bigip-blue-green %{_builddir}/presentation
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -30,8 +29,7 @@ mkdir -p $RPM_BUILD_ROOT%{IAPP_INSTALL_DIR}
 cp %{_builddir}/manifest.json $RPM_BUILD_ROOT%{IAPP_INSTALL_DIR}
 cp %{_builddir}/package.json $RPM_BUILD_ROOT%{IAPP_INSTALL_DIR}
 cp -r %{_builddir}/nodejs $RPM_BUILD_ROOT%{IAPP_INSTALL_DIR}
-cp -r %{_builddir}/schema $RPM_BUILD_ROOT%{IAPP_INSTALL_DIR}
-cp -r %{_builddir}/examples $RPM_BUILD_ROOT%{IAPP_INSTALL_DIR}
+cp -r %{_builddir}/presentation $RPM_BUILD_ROOT%{IAPP_INSTALL_DIR}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
