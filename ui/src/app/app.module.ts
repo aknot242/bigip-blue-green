@@ -5,16 +5,19 @@ import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatButtonModule, MatFormFieldModule, MatSliderModule, MatSelectModule, MatInputModule } from '@angular/material';
 import { BigIpService } from './bigip/services/bigip.service';
-import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
 import { BigIpConfig } from './bigip/models/bigip-config';
 import { BigIpModule } from './bigip/bigip.module';
 import { NgHttpLoaderModule } from 'ng-http-loader';
+import { UniqueDeclarationNameValidatorDirective } from './declaration-name.directive';
+import { AuthInterceptor } from './http-interceptors/auth-interceptor';
+import { AuthService } from './bigip/services/auth.service';
 
 /**
  * This is our configuration object!
  * REPLACE THE VALUES
  */
-const bigIpConfig: BigIpConfig = { 
+const bigIpConfig: BigIpConfig = {
   url: '',
   username: '',
   password: ''
@@ -22,7 +25,8 @@ const bigIpConfig: BigIpConfig = {
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    UniqueDeclarationNameValidatorDirective
   ],
   imports: [
     BigIpModule.forRoot(bigIpConfig),
@@ -38,7 +42,9 @@ const bigIpConfig: BigIpConfig = {
     NgHttpLoaderModule.forRoot()
   ],
   providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     BigIpService,
+    AuthService,
     HttpClient
   ],
   bootstrap: [AppComponent]

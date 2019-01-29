@@ -1,0 +1,85 @@
+{
+  "definitions": {},
+  "$id": "https://github.com/aknot242/bigip-blue-green",
+  "type": "object",
+  "title": "The Root Schema",
+  "required": [
+    "name",
+    "partition",
+    "virtualServerFullPath",
+    "distribution"
+  ],
+  "properties": {
+    "name": {
+      "$id": "#/properties/name",
+      "type": "string",
+      "title": "The Name Schema",
+      "default": "",
+      "examples": [
+        "My_BlueGreen_Config"
+      ],
+      "pattern": "^[A-Za-z][0-9A-Za-z_]{0,47}$"
+    },
+    "partition": {
+      "$id": "#/properties/partition",
+      "type": "string",
+      "title": "The Partition Schema",
+      "default": "",
+      "examples": [
+        "MyPartition"
+      ],
+      "pattern": "^[A-Za-z][0-9A-Za-z_]{0,47}$"
+    },
+    "virtualServerFullPath": {
+      "$id": "#/properties/virtualServerFullPath",
+      "type": "string",
+      "title": "The Virtual Server Schema",
+      "default": "",
+      "examples": [
+        "/MyPartition/Application_1/serviceMain"
+      ],
+      "pattern": "^\/[A-Za-z][0-9A-Za-z_/]{0,46}$"
+    },
+    "distribution": {
+      "$id": "#/properties/distribution",
+      "type": "object",
+      "title": "The Distribution Schema",
+      "required": [
+        "ratio",
+        "bluePool",
+        "greenPool"
+      ],
+      "properties": {
+        "ratio": {
+          "$id": "#/properties/distribution/properties/ratio",
+          "type": "number",
+          "title": "The Ratio Schema",
+          "default": 0.0,
+          "examples": [
+            0.5
+          ]
+        },
+        "bluePool": {
+          "$id": "#/properties/distribution/properties/bluePool",
+          "type": "string",
+          "title": "The Blue Pool Schema",
+          "default": "",
+          "examples": [
+            "blue_pool"
+          ],
+          "pattern": "^[A-Za-z][0-9A-Za-z_]{0,47}$"
+        },
+        "greenPool": {
+          "$id": "#/properties/distribution/properties/greenPool",
+          "type": "string",
+          "title": "The Green Pool Schema",
+          "default": "",
+          "examples": [
+            "green_pool"
+          ],
+          "pattern": "^[A-Za-z][0-9A-Za-z_]{0,47}$"
+        }
+      }
+    }
+  }
+}

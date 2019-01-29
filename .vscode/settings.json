@@ -1,4 +1,22 @@
 {
-    "python.pythonPath": "/usr/local/bin/python",
-    "python.linting.enabled": true
+  "python.pythonPath": "/usr/local/bin/python",
+  "python.linting.enabled": true,
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "javascript.format.insertSpaceBeforeFunctionParenthesis": true,
+  "javascript.format.insertSpaceAfterConstructor": true,
+  "javascript.validate.enable": false,
+  "eslint.workingDirectories": [
+    "./api"
+  ],
+  "saveAndRun": {
+    "commands": [
+      {
+        "match": ".*",
+        "cmd": "${workspaceRoot}/api/scripts/refreshBigIp.sh ${fileBasename} ${file}",
+        "useShortcut": false,
+        "silent": false
+      }
+    ]
+  }
 }

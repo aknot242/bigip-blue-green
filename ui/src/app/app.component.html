@@ -7,6 +7,24 @@
 </div>
 <form>
   <div class="flex-container selector-container">
+    <div class="wide-container">
+      <mat-form-field>
+        <input matInput 
+        placeholder="Declaration Name" 
+        id="declarationName" 
+        name="declarationName" 
+        #declarationName="ngModel" 
+        [(ngModel)]="declarationNameText" 
+        [ngModelOptions]="{ updateOn: 'blur' }" 
+        uniqueDeclarationName>
+      </mat-form-field>
+      <div *ngIf="declarationName.pending">Validating...</div>
+      <div *ngIf="declarationName.invalid">
+        <div *ngIf="declarationName.errors?.uniqueDeclarationName">
+          Declaration name is already taken.
+        </div>
+      </div>
+    </div>
     <div>
       <h4>Partition</h4>
       <mat-form-field>
@@ -33,7 +51,7 @@
       <mat-form-field>
         <mat-select matNativeControl required [(ngModel)]="bluePool" name="bluePool">
           <mat-option *ngFor="let pool of partitionPools" [value]="pool">
-            {{pool}}
+            {{pool.name}}
           </mat-option>
         </mat-select>
       </mat-form-field>
@@ -43,14 +61,14 @@
       <mat-form-field>
         <mat-select matNativeControl required [(ngModel)]="greenPool" name="greenPool">
           <mat-option *ngFor="let pool of partitionPools" [value]="pool">
-            {{pool}}
+            {{pool.name}}
           </mat-option>
         </mat-select>
       </mat-form-field>
     </div>
   </div>
 
-  <div class="slider-container even-more-v-space">
+  <div class="wide-container even-more-v-space">
     <!-- <mat-form-field class="example-full-width">
         <input matInput placeholder="Traffic distribution" [(ngModel)]="newTrafficDist" name="newTrafficDist">
       </mat-form-field> -->
@@ -58,17 +76,17 @@
     <mat-slider name="currentTrafficDist" [(ngModel)]="newTrafficDist" tickInterval="1"></mat-slider>
     <div class="flex-container">
       <span class="flex-item blue-bkg">
-        <div class="huge-font">{{100-newTrafficDist}}%</div>{{bluePool}}
+        <div class="huge-font">{{100-newTrafficDist}}%</div>{{bluePool?.name}}
       </span>
       <span class="flex-item green-bkg">
-        <div class="huge-font">{{newTrafficDist}}%</div>{{greenPool}}
+        <div class="huge-font">{{newTrafficDist}}%</div>{{greenPool?.name}}
       </span>
     </div>
     <div class="more-v-space">
-      <button mat-raised-button color="basic" (click)="onSet()">Set</button>
+      <button mat-raised-button color="basic" (click)="onCreate()">Create</button>
     </div>
     <div class="more-v-space">
-      <button mat-raised-button color="basic" (click)="unSet()">UnSet</button>
+      <button mat-raised-button color="basic" (click)="onDelete()">Delete</button>
     </div>
   </div>
 </form>

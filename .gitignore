@@ -1,12 +1,12 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
 # compiled output
-/dist
-/tmp
-/out-tsc
+/ui/dist
+/ui/tmp
+/ui/out-tsc
 
 # dependencies
-/node_modules
+node_modules
 
 # profiling files
 chrome-profiler-events.json
@@ -29,14 +29,14 @@ speed-measure-plugin.json
 !.vscode/extensions.json
 
 # misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
+/ui/.sass-cache
+/ui/connect.lock
+/ui/coverage
+/ui/libpeerconnection.log
 npm-debug.log
 yarn-error.log
 testem.log
-/typings
+/ui/typings
 
 # System Files
 .DS_Store
@@ -44,3 +44,4 @@ Thumbs.db
 azure-proxy.conf.json
 local-proxy.conf.json
 .vscode/settings.json
+*.pyc
