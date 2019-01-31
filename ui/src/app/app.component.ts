@@ -59,7 +59,7 @@ export class AppComponent {
     this.bigIpService.createBlueGreenDeclaration(declaration)
       .subscribe((status) => {
         console.log(status);
-        this.snackBar.open(`declaration ${status.name} successfully deleted`);
+        this.snackBar.open(`declaration ${status.name} successfully created`);
       });
   }
 

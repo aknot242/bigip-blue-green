@@ -1,34 +1,27 @@
 <!--The content below is only a placeholder and can be replaced.-->
 <ng-http-loader></ng-http-loader>
 <div style="text-align:center">
-  <h1>
-    {{ title }}
-  </h1>
+  <h1><img class="logo" src="assets/images/f5-logo.png" alt="F5 logo" />{{ title }}</h1>
 </div>
-<form>
-  <div class="flex-container selector-container">
-    <div class="wide-container">
-      <mat-form-field>
-        <input matInput 
-        placeholder="Declaration Name" 
-        id="declarationName" 
-        name="declarationName" 
-        #declarationName="ngModel" 
-        [(ngModel)]="declarationNameText" 
-        [ngModelOptions]="{ updateOn: 'blur' }" 
-        uniqueDeclarationName>
-      </mat-form-field>
-      <div *ngIf="declarationName.pending">Validating...</div>
-      <div *ngIf="declarationName.invalid">
-        <div *ngIf="declarationName.errors?.uniqueDeclarationName">
-          Declaration name is already taken.
-        </div>
-      </div>
-    </div>
+<form #formRef="ngForm">
+  <div class="selector-container more-v-space">
     <div>
-      <h4>Partition</h4>
       <mat-form-field>
-        <mat-select matNativeControl required [(ngModel)]="selectedPartition" (ngModelChange)="loadVirtualServersAndPools($event)"
+        <input matInput placeholder="Declaration Name" id="declarationName" name="declarationName" #declarationName="ngModel"
+          [(ngModel)]="declarationNameText" [ngModelOptions]="{ updateOn: 'blur' }" uniqueDeclarationName required>
+        <mat-error *ngIf="declarationName.invalid">
+          <div *ngIf="declarationName.errors?.uniqueDeclarationName">
+            Declaration name is already taken.
+          </div>
+        </mat-error>
+        <!-- <div *ngIf="declarationName.pending">Validating...</div> -->
+      </mat-form-field>
+    </div>
+  </div>
+  <div class="flex-container selector-container more-v-space">
+    <div>
+      <mat-form-field>
+        <mat-select placeholder="Partition" matNativeControl required [(ngModel)]="selectedPartition" (ngModelChange)="loadVirtualServersAndPools($event)"
           name="selectedPartition">
           <mat-option *ngFor="let partition of partitions" [value]="partition">
             {{partition}}
@@ -37,29 +30,28 @@
       </mat-form-field>
     </div>
     <div>
-      <h4>Virtual Server</h4>
       <mat-form-field>
-        <mat-select matNativeControl required [(ngModel)]="selectedVirtualServer" name="selectedVirtualServer">
+        <mat-select placeholder="Virtual Server" matNativeControl required [(ngModel)]="selectedVirtualServer" name="selectedVirtualServer">
           <mat-option *ngFor="let virtualServer of partitionVirtualServers" [value]="virtualServer">
             {{virtualServer.name}}
           </mat-option>
         </mat-select>
       </mat-form-field>
     </div>
-    <div class="more-v-space">
-      <h4 class="blue">Blue Pool</h4>
+  </div>
+  <div class="flex-container selector-container more-v-space">
+    <div>
       <mat-form-field>
-        <mat-select matNativeControl required [(ngModel)]="bluePool" name="bluePool">
+        <mat-select placeholder="Blue Pool" matNativeControl required [(ngModel)]="bluePool" name="bluePool">
           <mat-option *ngFor="let pool of partitionPools" [value]="pool">
             {{pool.name}}
           </mat-option>
         </mat-select>
       </mat-form-field>
     </div>
-    <div class="more-v-space">
-      <h4 class="green">Green Pool</h4>
+    <div>
       <mat-form-field>
-        <mat-select matNativeControl required [(ngModel)]="greenPool" name="greenPool">
+        <mat-select placeholder="Green Pool" matNativeControl required [(ngModel)]="greenPool" name="greenPool">
           <mat-option *ngFor="let pool of partitionPools" [value]="pool">
             {{pool.name}}
           </mat-option>
@@ -82,11 +74,13 @@
         <div class="huge-font">{{newTrafficDist}}%</div>{{greenPool?.name}}
       </span>
     </div>
-    <div class="more-v-space">
-      <button mat-raised-button color="basic" (click)="onCreate()">Create</button>
-    </div>
-    <div class="more-v-space">
-      <button mat-raised-button color="basic" (click)="onDelete()">Delete</button>
+    <div class="flex-container selector-container more-v-space">
+      <div>
+        <button mat-raised-button color="basic" (click)="onCreate()" [disabled]="!formRef.form.valid">Create</button>
+      </div>
+      <div>
+        <button mat-raised-button color="basic" (click)="onDelete()" [disabled]="!formRef.form.valid">Delete</button>
+      </div>
     </div>
   </div>
 </form>

@@ -3,30 +3,36 @@
 html, body { height: 100%; }
 body { margin: 30px; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
+.logo {
+  width: 50px;
+  padding: 16px;
+  vertical-align: middle;
+}
+
 .more-v-space { 
-    margin-top:60px; 
-    /* margin-bottom:50px;  */
+  margin-top:60px; 
+  /* margin-bottom:50px;  */
 }
 
 .even-more-v-space { 
-    margin-top:100px; 
-    /* margin-bottom:50px;  */
+  margin-top:100px; 
+  /* margin-bottom:50px;  */
 }
 
 .blue {
-    color: blue;
+  color: blue;
 }
 
 .green {
-    color: green;
+  color: green;
 }
 
 .blue-bkg {
-    background-color: blue;
-    color: white;
+  background-color: blue;
+  color: white;
 }
 
 .green-bkg {
-    background-color: green;
-    color: white;
+  background-color: green;
+  color: white;
 }
