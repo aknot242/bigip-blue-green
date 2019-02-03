@@ -1,7 +1,11 @@
 {
   "name": "bigip-blue-green-api",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.5.0",
+  "description": "UI for bigip-blue-green",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aknot242/bigip-blue-green.git"
+  },
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

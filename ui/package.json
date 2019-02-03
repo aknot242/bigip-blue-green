@@ -1,6 +1,11 @@
 {
-  "name": "bigip-blue-green",
-  "version": "0.5.0",
+  "name": "bigip-blue-green-ui",
+  "version": "1.0.0",
+  "description": "API for bigip-blue-green",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aknot242/bigip-blue-green.git"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
