@@ -10,11 +10,8 @@
         <input matInput placeholder="Declaration Name" id="declarationName" name="declarationName" #declarationName="ngModel"
           [(ngModel)]="declarationNameText" [ngModelOptions]="{ updateOn: 'blur' }" uniqueDeclarationName required>
         <mat-error *ngIf="declarationName.invalid">
-          <div *ngIf="declarationName.errors?.uniqueDeclarationName">
-            Declaration name is already taken.
-          </div>
+          <div *ngIf="declarationName.errors?.uniqueDeclarationName">Name is already in use.</div>
         </mat-error>
-        <!-- <div *ngIf="declarationName.pending">Validating...</div> -->
       </mat-form-field>
     </div>
   </div>
@@ -61,9 +58,6 @@
   </div>
 
   <div class="wide-container even-more-v-space">
-    <!-- <mat-form-field class="example-full-width">
-        <input matInput placeholder="Traffic distribution" [(ngModel)]="newTrafficDist" name="newTrafficDist">
-      </mat-form-field> -->
     <h4>Traffic Distribution</h4>
     <mat-slider name="currentTrafficDist" [(ngModel)]="newTrafficDist" tickInterval="1"></mat-slider>
     <div class="flex-container">

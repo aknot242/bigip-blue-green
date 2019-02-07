@@ -1,32 +1,32 @@
-import { Injectable, Inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { BigIpConfigService } from '../services/bigip-config.service'
 import { tap } from 'rxjs/operators';
 import { ConfigData } from '../models/config-data';
 import { Declaration } from '../models/declaration';
 
+const BASE_URI = '/mgmt/shared/blue-green';
+
 @Injectable()
 export class BigIpService {
 
-  constructor(private http: HttpClient,
-    @Inject(BigIpConfigService) private bigIp) { }
+  constructor(private http: HttpClient) { }
 
   /** GET configuration information from the big-ip */
   getBigIpConfigData(): Observable<ConfigData[]> {
-    return this.http.get<ConfigData[]>(`${this.bigIp.url}/mgmt/shared/blue-green/bigip-config`);
+    return this.http.get<ConfigData[]>(`${BASE_URI}/bigip-config`);
   }
 
   declarationExists(declarationName: string): Observable<boolean> {
-    return this.http.get<boolean>(`${this.bigIp.url}/mgmt/shared/blue-green/config/${declarationName}`)
+    return this.http.get<boolean>(`${BASE_URI}/config/${declarationName}`)
     .pipe(tap(response => response !== undefined)) ;
   }
 
   createBlueGreenDeclaration(declaration: Declaration): Observable<any> {
-    return this.http.post(`${this.bigIp.url}/mgmt/shared/blue-green/declare`, declaration);
+    return this.http.post(`${BASE_URI}/declare`, declaration);
   }
 
   deleteBlueGreenDeclaration(declarationName: string): Observable<any> {
-    return this.http.delete(`${this.bigIp.url}/mgmt/shared/blue-green/declare/${declarationName}`);
+    return this.http.delete(`${BASE_URI}/declare/${declarationName}`);
   }
 }

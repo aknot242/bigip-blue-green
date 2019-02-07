@@ -4,6 +4,9 @@ import { ConfigData } from './bigip/models/config-data';
 import { ObjectReference } from './bigip/models/object-reference';
 import { Declaration } from './bigip/models/declaration';
 import { MatSnackBar } from '@angular/material';
+import { AuthService } from './bigip/services/auth.service';
+import { MatDialog } from '@angular/material';
+import { AuthDialog } from './auth-dialog';
 
 @Component({
   selector: 'app-root',
@@ -15,7 +18,10 @@ export class AppComponent {
   /**
    *
    */
-  constructor(public bigIpService: BigIpService, private snackBar: MatSnackBar) { }
+  constructor(public bigIpService: BigIpService,
+    public authService: AuthService,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog) { }
 
   title = 'BIG-IP BlueGreen Deployment';
   declarationNameText = '';
@@ -31,12 +37,30 @@ export class AppComponent {
   selectedPartition = '';
 
   ngOnInit() {
+
     this.newTrafficDist = this.currentTrafficDist;
-    this.bigIpService.getBigIpConfigData()
-      .subscribe((config) => {
-        this.config = config;
-        this.partitions = config.map(c => c.name);
+    this.authService.authenticate()
+      .subscribe(token => {
+        this.bigIpService.getBigIpConfigData()
+          .subscribe((config) => {
+            this.config = config;
+            this.partitions = config.map(c => c.name);
+          });
+      }, err => {
+        this.openAuthDialog(err.statusText);
       });
+  }
+
+  openAuthDialog(message: string): void {
+    // Wrapping in a promise to work around issue: https://github.com/angular/material2/issues/5268
+    Promise.resolve().then(() => {
+      const dialogRef = this.dialog.open(AuthDialog, {
+        data: { message: message },
+      });
+      dialogRef.afterClosed().subscribe(() => {
+        window.location.href = '/xui/';
+      });
+    });
   }
 
   loadVirtualServersAndPools(partition: string) {
