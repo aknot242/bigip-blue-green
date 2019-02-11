@@ -1,0 +1,353 @@
+{
+	"info": {
+		"_postman_id": "6c41375e-33e3-4f51-bfcf-0fee8b8645b1",
+		"name": "BigIpBlueGreen",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Auth token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "a04fd41c-8712-49a5-ba52-bed4f043371b",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"bigip_a_auth_token\", jsonData.token.token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"{{bigip_admin}}\",\n    \"password\": \"{{bigip_admin_password}}\",\n    \"loginProviderName\": \"tmos\"\n}"
+				},
+				"url": {
+					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/authn/login",
+					"protocol": "https",
+					"host": [
+						"{{bigip_a_mgmt}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"authn",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Auth token fom Cookie",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "a04fd41c-8712-49a5-ba52-bed4f043371b",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"bigip_a_auth_token\", jsonData.token.token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Cookie",
+						"value": "BIGIPAuthCookie=7FFE6232D65012AA7D1BCAAD1C7C8320DAC72430",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"loginProviderName\": \"tmos\",\n    \"needsToken\": true\n}"
+				},
+				"url": {
+					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/authn/login",
+					"protocol": "https",
+					"host": [
+						"{{bigip_a_mgmt}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"authn",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET declaration example",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-F5-Auth-Token",
+						"value": "{{bigip_a_auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/blue-green/declare/example",
+					"protocol": "https",
+					"host": [
+						"{{bigip_a_mgmt}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"blue-green",
+						"declare",
+						"example"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST with declaration",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-F5-Auth-Token",
+						"value": "{{bigip_a_auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Sample1\",\n    \"virtualServerFullPath\": \"/DVWA/Application_1/serviceMain\",\n    \"ratio\": 0.45,\n    \"bluePool\": \"/Sample_01/Application_1/web_pool\",\n    \"greenPool\": \"/Sample_01/testapp.app/testapp_pool\"\n}"
+				},
+				"url": {
+					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/blue-green/declare",
+					"protocol": "https",
+					"host": [
+						"{{bigip_a_mgmt}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"blue-green",
+						"declare"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE declaration",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{bigip_a_auth_token}}"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/blue-green/declare/DVWA_App",
+					"protocol": "https",
+					"host": [
+						"{{bigip_a_mgmt}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"blue-green",
+						"declare",
+						"DVWA_App"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET BIG-IP config data",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-F5-Auth-Token",
+						"value": "{{bigip_a_auth_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/blue-green/bigip-config",
+					"protocol": "https",
+					"host": [
+						"{{bigip_a_mgmt}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"blue-green",
+						"bigip-config"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET specific blue-green declaration",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{bigip_a_auth_token}}"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/blue-green/config/Sample1",
+					"protocol": "https",
+					"host": [
+						"{{bigip_a_mgmt}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"blue-green",
+						"config",
+						"Sample1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET all blue-green declarations",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{bigip_a_auth_token}}"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/blue-green/config",
+					"protocol": "https",
+					"host": [
+						"{{bigip_a_mgmt}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"blue-green",
+						"config"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "c9ee4a31-12c9-486f-adda-73b6d22fa1d4",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "b952626f-2406-4289-8985-98be176174ae",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

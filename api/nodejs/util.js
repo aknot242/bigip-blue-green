@@ -75,7 +75,7 @@ class Util {
    *
    * @return {boolean}
    */
-  validateConfiguration (input) {
+  validateDeclaration (input) {
     let message = 'success';
     let jsonInput = this.isJson(input);
     // Validate the input against the schema
@@ -89,10 +89,9 @@ class Util {
       } else {
         message = 'Unknown validation error.';
       }
-      this.logError(`validateConfiguration() Error: ${message}`);
       return { isValid: false, message: message, json: jsonInput };
     }
-    this.logDebug(`validateConfiguration(): ${message}`);
+    this.logDebug(`validateDeclaration(): ${message}`);
     return { isValid: true, message: message, json: jsonInput };
   }
 
@@ -122,12 +121,27 @@ class Util {
       try {
         input = JSON.parse(input);
       } catch (err) {
-        this.logInfo(`Error: Unable to parse input: ${err}`);
+        this.logInfo(`Unable to parse input: ${err}`);
         return;
       }
     }
     return input;
   }
+
+  isEmptyObject (obj) {
+    return !Object.keys(obj).length > 0;
+  }
+
+  getApiVersion () {
+    try {
+      const pjson = require('./package.json');
+      return pjson.version;
+    } catch (err) {
+      this.logError(`Unable to determine API package version: ${err}`);
+      return "UNKNOWN";
+    }
+  }
 }
 
 module.exports = Util;
+

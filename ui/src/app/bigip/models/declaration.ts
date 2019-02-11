@@ -1,7 +1,7 @@
-import { Distribution } from './distribution';
-export interface Declaration {
+export class Declaration {
   name: string;
-  partition: string;
   virtualServerFullPath: string;
-  distribution: Distribution;
+  ratio: number;
+  bluePool: string;
+  greenPool: string;
 }

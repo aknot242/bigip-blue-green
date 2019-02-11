@@ -1,13 +1,13 @@
 'use strict';
-const jsonata = require('jsonata');
 const Util = require('./util');
 
 const DEFAULT_PARTITION = 'Common';
-const DATA_GROUP_PREFIX = '____bg_';
+const DATA_GROUP = '____bigip_blue_green';
+const BASE_DATA_GROUP_URI = '/mgmt/tm/ltm/data-group/internal';
+const DATA_GROUP_URI = `${BASE_DATA_GROUP_URI}/~${DEFAULT_PARTITION}~${DATA_GROUP}`;
 const SHIM_IRULE_NAME = '_bigip_blue_green';
 const SHIM_IRULE_FULLPATH = `/${DEFAULT_PARTITION}/${SHIM_IRULE_NAME}`;
-const PARTITION_FILTER = `$filter=partition%20eq%20`;
-// const DEFAULT_PARTITION_FILTER = `${PARTITION_FILTER}${DEFAULT_PARTITION}`;
+const COOKIE_PREFIX = 'bg';
 
 class ApiClient {
   constructor () {
@@ -15,20 +15,14 @@ class ApiClient {
   }
 
   getAllData (originalRestOp, workerContext) {
-    return this.getPartitions(originalRestOp, workerContext)
-      .then((partitions) => {
-        const bigIpDataPromises = partitions.map(p => {
-          const getVsPromise = this.getVirtualServersByPartition(originalRestOp, workerContext, p);
-          const getPoolsPromise = this.getPoolsByPartition(originalRestOp, workerContext, p);
-          return Promise.all([getVsPromise, getPoolsPromise])
-            .then((values) => {
-              return { name: p, virtualServers: values[0], pools: values[1] };
-            });
-        });
-        return Promise.all(bigIpDataPromises);
+    const getVsPromise = this.getVirtualServers(originalRestOp, workerContext);
+    const getPoolsPromise = this.getPools(originalRestOp, workerContext);
+    return Promise.all([getVsPromise, getPoolsPromise])
+      .then((values) => {
+        return { virtualServers: values[0], pools: values[1] };
       })
       .catch((err) => {
-        this.util.logError(`getAllData() Error: ${err}`);
+        this.util.logError(`getAllData(): ${err}`);
       });
   }
 
@@ -42,13 +36,13 @@ class ApiClient {
         return items.map(v => v.fullPath);
       })
       .catch((err) => {
-        this.util.logError(`getPartitions() Error: ${err}`);
+        this.util.logError(`getPartitions(): ${err}`);
       });
   }
 
-  /** GET virtual servers by partition from the big-ip */
-  getVirtualServersByPartition (originalRestOp, workerContext, partition) {
-    const uri = workerContext.restHelper.makeRestjavadUri('/mgmt/tm/ltm/virtual', `${PARTITION_FILTER}${partition}&$select=name,fullPath`);
+  /** GET virtual servers from the big-ip */
+  getVirtualServers (originalRestOp, workerContext) {
+    const uri = workerContext.restHelper.makeRestjavadUri('/mgmt/tm/ltm/virtual', '$select=name,fullPath');
     return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
       .then((response) => {
         const body = response.getBody();
@@ -56,13 +50,13 @@ class ApiClient {
         return items.map(v => { return { name: v.name, fullPath: v.fullPath }; });
       })
       .catch((err) => {
-        this.util.logError(`getVirtualServersByPartition() Error: ${err}`);
+        this.util.logError(`getVirtualServers(): ${err}`);
       });
   }
 
-  /** GET pools by partition from the big-ip */
-  getPoolsByPartition (originalRestOp, workerContext, partition) {
-    const uri = workerContext.restHelper.makeRestjavadUri('/mgmt/tm/ltm/pool', `${PARTITION_FILTER}${partition}&$select=name,fullPath`);
+  /** GET pools from the big-ip */
+  getPools (originalRestOp, workerContext) {
+    const uri = workerContext.restHelper.makeRestjavadUri('/mgmt/tm/ltm/pool', '$select=name,fullPath');
     return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
       .then((response) => {
         const body = response.getBody();
@@ -70,7 +64,7 @@ class ApiClient {
         return items.map(v => { return { name: v.name, fullPath: v.fullPath }; });
       })
       .catch((err) => {
-        this.util.logError(`getPoolsByPartition() Error: ${err}`);
+        this.util.logError(`getPools(): ${err}`);
       });
   }
 
@@ -79,61 +73,179 @@ class ApiClient {
   /** build blue-green objects on the big-ip */
   buildBlueGreenObjects (originalRestOp, workerContext, declaration) {
     this.util.logDebug(`buildBlueGreenObjects(): Declaration: ${workerContext.restHelper.jsonPrinter(declaration)}`);
-    return this.setDataGroup(originalRestOp, workerContext, declaration)
+    return this.setBlueGreenDeclaration(originalRestOp, workerContext, declaration)
       .then(() => {
         // check if the irule is present, and plug it in!
         this.util.logDebug(`buildBlueGreenObjects(): Ready to shim`);
         return this.shimIRule(originalRestOp, workerContext, declaration.virtualServerFullPath);
       })
       .catch((err) => {
-        this.util.logError(`buildBlueGreenObjects() Error: ${err}`);
+        this.util.logError(`buildBlueGreenObjects(): ${err}`);
       });
   }
 
-  /** GET datagroups by partition from the big-ip */
-  getDataGroup (originalRestOp, workerContext, partition, objectId) {
-    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/data-group/internal/~${DEFAULT_PARTITION}~${DATA_GROUP_PREFIX}${objectId}`);
+  /** GET all bluegreen declarations from datagroups from the big-ip */
+  getAllBlueGreenDeclarations (originalRestOp, workerContext) {
+    const uri = workerContext.restHelper.makeRestjavadUri(DATA_GROUP_URI);
+    this.util.logDebug(`getAllBlueGreenDeclarations(): uri ${workerContext.restHelper.jsonPrinter(uri)}`);
     return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
       .then((response) => {
-        const d = response['records'].filter(v => v.name === 'distribution')[0]['data'];
-        const dArray = d.split(',');
-        return { ratio: Number(dArray[0]), bluePool: dArray[1], greenPool: dArray[2] };
+        this.util.logDebug(`getAllBlueGreenDeclarations(): GET data returned: ${workerContext.restHelper.jsonPrinter(response)}`);
+        const records = response.body.records || [];
+        const recordObjects = records.map(record => {
+          return this.buildDeclarationFromDGRecord(record);
+        });
+        this.util.logDebug(`getAllBlueGreenDeclarations(): result: ${workerContext.restHelper.jsonPrinter(recordObjects)}`);
+        return recordObjects;
       })
       .catch((err) => {
-        this.util.logError(`getDataGroup() Error: ${err}`);
+        const errorStatusCode = err.getResponseOperation().getStatusCode();
+        // datagroup does not yet exist until declarations are set
+        if (errorStatusCode === 404) {
+          return [];
+        }
+        this.util.logError(`getAllBlueGreenDeclarations(): ${err}`);
       });
   }
 
-  /** PUT datagroup values to the big-ip if exists. If not, create it first with a POST */
-  setDataGroup (originalRestOp, workerContext, declaration) {
-    const baseDataGroupUri = '/mgmt/tm/ltm/data-group/internal';
-
-    const putUri = workerContext.restHelper.makeRestjavadUri(`${baseDataGroupUri}/~${DEFAULT_PARTITION}~${DATA_GROUP_PREFIX}${this.convertPathForObjectName(declaration.virtualServerFullPath)}`);
-    const postUri = workerContext.restHelper.makeRestjavadUri(baseDataGroupUri);
-    this.util.logDebug(`setDataGroup(): uri ${workerContext.restHelper.jsonPrinter(putUri)}`);
-
-    return this.blueGreenConfigExists(originalRestOp, workerContext, declaration.name)
-      .then((exists) => {
-        if (exists) {
-          return workerContext.restRequestSender.sendPut(this.getRestOperationInstance(originalRestOp, workerContext, putUri, this.buildDataGroupBody(declaration)))
-            .then((resp) => {
-              this.util.logDebug(`setDataGroup(): PUT response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
-            })
-            .catch((err) => {
-              this.util.logError(`setDataGroup() PUT Error: ${err}`);
-            });
-        } else {
-          return workerContext.restRequestSender.sendPost(this.getRestOperationInstance(originalRestOp, workerContext, postUri, this.buildDataGroupBody(declaration, true)))
-            .then((resp) => {
-              this.util.logDebug(`setDataGroup(): POST response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
-            })
-            .catch((err) => {
-              this.util.logError(`setDataGroup() POST Error: ${err}`);
-            });
-        }
+  /** GET specific bluegreen declaration from datagroups from the big-ip */
+  getBlueGreenDeclaration (originalRestOp, workerContext, declarationName) {
+    return this.getAllBlueGreenDeclarations(originalRestOp, workerContext)
+      .then((declarations) => {
+        return declarations.filter(declaration => declaration.name === declarationName)[0] || {};
       })
       .catch((err) => {
-        this.util.logError(`setDataGroup() Error: ${err}`);
+        this.util.logError(`getBlueGreenDeclaration(): ${err}`);
+      });
+  }
+
+  /** Checks to see if a declaration by another name already exists for a virtual server on the big-ip */
+  isDeclarationConflicting (originalRestOp, workerContext, declarationToCheck) {
+    return this.getAllBlueGreenDeclarations(originalRestOp, workerContext)
+      .then((declarations) => {
+        const conflictingDeclaration = declarations.filter(declaration =>
+          declaration.name !== declarationToCheck.name &&
+          declaration.virtualServerFullPath === declarationToCheck.virtualServerFullPath);
+        return { conflict: conflictingDeclaration.length > 0, reference: conflictingDeclaration[0] };
+      })
+      .catch((err) => {
+        this.util.logError(`isDeclarationConflicting(): ${err}`);
+      });
+  }
+
+  /** check if bluegreen declaration exists on big-ip */
+  blueGreenDeclarationExists (originalRestOp, workerContext, declarationName) {
+    return this.getBlueGreenDeclaration(originalRestOp, workerContext, declarationName)
+      .then((declaration) => {
+        this.util.logDebug(`blueGreenDeclarationExists(): GET data returned: ${workerContext.restHelper.jsonPrinter(declaration)}`);
+        return !this.util.isEmptyObject(declaration);
+      })
+      .catch((err) => {
+        this.util.logError(`blueGreenDeclarationExists(): ${err}`);
+      });
+  }
+
+  /** Save declaration in a datagroup. If the datagroup doesn't exist create it first with a POST */
+  setBlueGreenDeclaration (originalRestOp, workerContext, declaration) {
+    const putUri = workerContext.restHelper.makeRestjavadUri(`${DATA_GROUP_URI}`);
+    this.util.logDebug(`setBlueGreenDeclaration(): uri ${workerContext.restHelper.jsonPrinter(putUri)}`);
+    return this.ensureDataGroupExists(originalRestOp, workerContext)
+      .then(() => this.getAllBlueGreenDeclarations(originalRestOp, workerContext))
+      .then((records) => {
+        // if a declaration (by name) already exists, always replace it
+        const newRecordsArray = records.filter(f => f.name !== declaration.name);
+        newRecordsArray.push(declaration);
+        this.util.logDebug(`setBlueGreenDeclaration(): new records array ${workerContext.restHelper.jsonPrinter(newRecordsArray)}`);
+
+        return workerContext.restRequestSender.sendPut(this.getRestOperationInstance(originalRestOp, workerContext, putUri, this.buildDataGroupBody(newRecordsArray)))
+          .then((resp) => {
+            this.util.logDebug(`setBlueGreenDeclaration(): PUT response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
+          })
+          .catch((err) => {
+            this.util.logError(`setBlueGreenDeclaration() PUT: ${err}`);
+          });
+      })
+      .catch((err) => {
+        this.util.logError(`setBlueGreenDeclaration(): ${err}`);
+      });
+  }
+
+  /** DELETE bluegreen declaration in on the big-ip */
+  deleteBlueGreenDeclaration (originalRestOp, workerContext, declarationName) {
+    const putUri = workerContext.restHelper.makeRestjavadUri(`${DATA_GROUP_URI}`);
+    this.util.logDebug(`deleteBlueGreenDeclaration(): uri ${workerContext.restHelper.jsonPrinter(putUri)}`);
+    return this.ensureDataGroupExists(originalRestOp, workerContext)
+      .then(() => this.getAllBlueGreenDeclarations(originalRestOp, workerContext))
+      .then((records) => {
+        // if a declaration (by name) already exists, always replace it
+        const newRecordsArray = records.filter(f => f.name !== declarationName);
+        this.util.logDebug(`deleteBlueGreenDeclaration(): new records array ${workerContext.restHelper.jsonPrinter(newRecordsArray)}`);
+
+        return workerContext.restRequestSender.sendPut(this.getRestOperationInstance(originalRestOp, workerContext, putUri, this.buildDataGroupBody(newRecordsArray)))
+          .then((resp) => {
+            this.util.logDebug(`deleteBlueGreenDeclaration(): PUT response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
+          })
+          .catch((err) => {
+            this.util.logError(`deleteBlueGreenDeclaration() PUT: ${err}`);
+          });
+      })
+      .catch((err) => {
+        this.util.logError(`deleteBlueGreenDeclaration(): ${err}`);
+      });
+  }
+
+  /** GET to see if the declaration datagroup exists on the big-ip and create it if not */
+  ensureDataGroupExists (originalRestOp, workerContext) {
+    const uri = workerContext.restHelper.makeRestjavadUri(DATA_GROUP_URI);
+    return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
+      .then(() => true)
+      .catch((err) => {
+        const errorStatusCode = err.getResponseOperation().getStatusCode();
+        if (errorStatusCode === 404) {
+          return this.createDataGroup(originalRestOp, workerContext);
+        }
+        this.util.logError(`ensureDataGroupExists(): ${err}`);
+      });
+  }
+
+  /** Create the declaration datagroup */
+  createDataGroup (originalRestOp, workerContext) {
+    const uri = workerContext.restHelper.makeRestjavadUri(BASE_DATA_GROUP_URI);
+    this.util.logDebug(`createDataGroup(): at start`);
+    return workerContext.restRequestSender.sendPost(this.getRestOperationInstance(originalRestOp, workerContext, uri, this.buildDataGroupBody()))
+      .then((resp) => {
+        this.util.logDebug(`createDataGroup(): POST response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
+        return resp.body;
+      })
+      .catch((err) => {
+        this.util.logError(`createDataGroup() POST: ${err}`);
+      });
+  }
+
+  createShimIRule (originalRestOp, workerContext) {
+    const uri = workerContext.restHelper.makeRestjavadUri('/mgmt/tm/ltm/rule/');
+    this.util.logDebug(`createShimIRule(): at start`);
+    return workerContext.restRequestSender.sendPost(this.getRestOperationInstance(originalRestOp, workerContext, uri, this.buildIRuleBody(SHIM_IRULE_FULLPATH)))
+      .then((resp) => {
+        this.util.logDebug(`createShimIRule(): POST response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
+        return resp.body;
+      })
+      .catch((err) => {
+        this.util.logError(`createShimIRule() POST: ${err}`);
+      });
+  }
+
+  /** GET to see if the shim irule exists on the big-ip */
+  shimIRuleExists (originalRestOp, workerContext) {
+    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/rule/${this.convertPathForQuery(SHIM_IRULE_FULLPATH)}`, '$select=fullPath');
+    return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
+      .then(() => true)
+      .catch((err) => {
+        const errorStatusCode = err.getResponseOperation().getStatusCode();
+        if (errorStatusCode === 404) {
+          return false;
+        }
+        this.util.logError(`shimIRuleExists(): ${err}`);
       });
   }
 
@@ -162,34 +274,7 @@ class ApiClient {
         return existingIRules;
       })
       .catch((err) => {
-        this.util.logError(`shimIRule() Error: ${err}`);
-      });
-  }
-
-  createShimIRule (originalRestOp, workerContext) {
-    const uri = workerContext.restHelper.makeRestjavadUri('/mgmt/tm/ltm/rule/');
-    this.util.logDebug(`createShimIRule(): at start`);
-    return workerContext.restRequestSender.sendPost(this.getRestOperationInstance(originalRestOp, workerContext, uri, this.buildIRuleBody(SHIM_IRULE_FULLPATH)))
-      .then((resp) => {
-        this.util.logDebug(`createShimIRule(): POST response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
-        return resp.body;
-      })
-      .catch((err) => {
-        this.util.logError(`createShimIRule() POST Error: ${err}`);
-      });
-  }
-
-  /** GET to see if the shim irule exists on the big-ip */
-  shimIRuleExists (originalRestOp, workerContext) {
-    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/rule/${this.convertPathForQuery(SHIM_IRULE_FULLPATH)}`, '$select=fullPath');
-    return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
-      .then(() => true)
-      .catch((err) => {
-        const errorStatusCode = err.getResponseOperation().getStatusCode();
-        if (errorStatusCode === 404) {
-          return false;
-        }
-        this.util.logError(`shimIRuleExists() Error: ${err}`);
+        this.util.logError(`shimIRule(): ${err}`);
       });
   }
 
@@ -200,7 +285,7 @@ class ApiClient {
     return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
       .then((data) => data.body['rules'])
       .catch((err) => {
-        this.util.logError(`getIRulesByVirtualServer() Error: ${err}`);
+        this.util.logError(`getIRulesByVirtualServer(): ${err}`);
       });
   }
 
@@ -215,26 +300,25 @@ class ApiClient {
         return data.body['rules'];
       })
       .catch((err) => {
-        this.util.logError(`setIRulesByVirtualServer() Error: ${err}`);
+        this.util.logError(`setIRulesByVirtualServer(): ${err}`);
       });
   }
 
-  unShimIRuleAndDeleteDatagroup (originalRestOp, workerContext, objectId) {
-    return this.getBlueGreenConfig(originalRestOp, workerContext, objectId)
-      .then((config) => {
-        const virtualServerFullPath = config.records.filter(f => f.name === 'virtualServerFullPath')[0].data;
-        const deleteDataGroupPromise = this.deleteDataGroup(originalRestOp, workerContext, DEFAULT_PARTITION, virtualServerFullPath);
-        const unShimIRulePromise = this.unShimIRule(originalRestOp, workerContext, virtualServerFullPath);
-        return Promise.all([deleteDataGroupPromise, unShimIRulePromise]);
+  unShimIRuleAndDeleteDeclaration (originalRestOp, workerContext, declarationName) {
+    return this.getBlueGreenDeclaration(originalRestOp, workerContext, declarationName)
+      .then((declaration) => {
+        const deleteBlueGreenDeclarationPromise = this.deleteBlueGreenDeclaration(originalRestOp, workerContext, declaration.name);
+        const unShimIRulePromise = this.unShimIRule(originalRestOp, workerContext, declaration.virtualServerFullPath);
+        return Promise.all([deleteBlueGreenDeclarationPromise, unShimIRulePromise]);
       })
       .catch((err) => {
-        this.util.logError(`unShimIRuleAndDeleteDatagroup() Error: ${err}`);
+        this.util.logError(`unShimIRuleAndDeleteDeclaration(): ${err}`);
       });
   }
 
   /** DELETE datagroup by partition from the big-ip */
-  deleteDataGroup (originalRestOp, workerContext, partition, virtualServerFullPath) {
-    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/data-group/internal/~${partition}~${DATA_GROUP_PREFIX}${this.convertPathForObjectName(virtualServerFullPath)}`);
+  deleteDataGroup (originalRestOp, workerContext) {
+    const uri = workerContext.restHelper.makeRestjavadUri(DATA_GROUP_URI);
     return workerContext.restRequestSender.sendDelete(this.getRestOperationInstance(originalRestOp, workerContext, uri));
   }
 
@@ -250,36 +334,7 @@ class ApiClient {
         return iRules;
       })
       .catch((err) => {
-        this.util.logError(`unShimIRule() Error: ${err}`);
-      });
-  }
-
-  /** check if bluegreen datagroup exists on big-ip */
-  blueGreenConfigExists (originalRestOp, workerContext, blueGreenConfigName) {
-    return this.getBlueGreenConfig(originalRestOp, workerContext, blueGreenConfigName)
-      .then((data) => {
-        this.util.logDebug(`blueGreenConfigExists(): GET data returned: ${workerContext.restHelper.jsonPrinter(data)}`);
-        return data !== undefined;
-      })
-      .catch((err) => {
-        this.util.logError(`blueGreenConfigExists() Error: ${err}`);
-      });
-  }
-
-  /** GET bluegreen datagroup from the big-ip */
-  getBlueGreenConfig (originalRestOp, workerContext, blueGreenConfigName) {
-    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/data-group/internal`);
-    this.util.logDebug(`getBlueGreenConfig(): configname '${blueGreenConfigName}' uri ${workerContext.restHelper.jsonPrinter(uri)}`);
-    return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
-      .then((data) => {
-        this.util.logDebug(`getBlueGreenConfig(): GET data returned: ${workerContext.restHelper.jsonPrinter(data)}`);
-        const expression = jsonata(`items[records[name='name' and data='${blueGreenConfigName}']]`);
-        const queryResult = expression.evaluate(data.body);
-        this.util.logDebug(`getBlueGreenConfig(): jsonata query result: ${workerContext.restHelper.jsonPrinter(queryResult)}`);
-        return queryResult;
-      })
-      .catch((err) => {
-        this.util.logError(`getBlueGreenConfig() Error: ${err}`);
+        this.util.logError(`unShimIRule(): ${err}`);
       });
   }
 
@@ -288,42 +343,43 @@ class ApiClient {
       'kind': 'tm:ltm:rule:rulestate',
       'name': SHIM_IRULE_NAME,
       'fullPath': shimIRuleFullPath,
-      'apiAnonymous': `proc get_datagroup_name v_name  {\n    return "${DATA_GROUP_PREFIX}[string trimleft [string map {/ _} $v_name] _ ]"\n}\n\n\nwhen HTTP_REQUEST {\n    # use this to set the cookie name as well as to look up the ratio and pool name settings from the datagroup\n    set blue_green_datagroup [call get_datagroup_name [virtual name]]\n\n    #log local0. "datagroup name $blue_green_datagroup"\n    \n    if { [class exists $blue_green_datagroup] } { \n    \n        set str [class match -value "distribution" equals $blue_green_datagroup]\n        \n        set fields [split $str ","]\n        \n        # get this from the datagroup\n        set ratio [lindex $fields 0]\n        set blue_pool [lindex $fields 1]\n        set green_pool [lindex $fields 2]\n    }\n \n    # Check if there is a pool selector cookie in the request\n    if { [HTTP::cookie exists $blue_green_datagroup] } {\n    \n        # Select the pool from the cookie\n        pool [HTTP::cookie $blue_green_datagroup]\n        set selected ""\n    } else {\n    \n        # No pool selector cookie, so choose a pool based on the datargroup ratio\n        set rand [expr { rand() }]\n    \n        if { $rand < $ratio } { \n            pool $blue_pool\n            set selected $blue_pool\n        } else {\n            pool $green_pool\n            set selected $green_pool\n        }\n        #log local0. "pool $selected"\n    }\n}\n\nwhen HTTP_RESPONSE {\n \n    # Set a pool selector cookie from the pool that was was selected for this request\n    if {$selected ne ""}{\n        HTTP::cookie insert name $blue_green_datagroup value $selected path "/"\n    }\n}`
+      'apiAnonymous': `# API Version ${this.util.getApiVersion()}\nproc get_datagroup_value {dg_name vs_full_path}   {\n    set dg [class get $dg_name]\n    foreach x $dg {\n        if { [lindex $x 1] starts_with $vs_full_path} {\n            return [lindex $x 1]\n        }\n    }\n}\n\nproc get_cookie_name {vs_full_path}   {\n    return "${COOKIE_PREFIX}[string map "/ _" $vs_full_path]"\n}\n\nwhen HTTP_REQUEST {\n    # Use this to set the cookie name as well as to look up the ratio and pool name settings from the datagroup\n    set traffic_dist_rule [call get_datagroup_value "${DATA_GROUP}" [virtual name]]\n    set fields [split $traffic_dist_rule ","]\n    set vs [lindex $fields 0]\n    set ratio [lindex $fields 1]\n    set blue_pool [lindex $fields 2]\n    set green_pool [lindex $fields 3]\n    set blue_green_cookie [call get_cookie_name $vs]\n\n    # Check if there is a pool selector cookie in the request\n    if { [HTTP::cookie exists $blue_green_cookie] } {\n    \n        # Select the pool from the cookie\n        pool [HTTP::cookie $blue_green_cookie]\n        set selected ""\n    } else {\n    \n        # No pool selector cookie, so choose a pool based on the datagroup ratio\n        set rand [expr { rand() }]\n    \n        if { $rand < $ratio } { \n            pool $blue_pool\n            set selected $blue_pool\n        } else {\n            pool $green_pool\n            set selected $green_pool\n        }\n    }\n}\n\nwhen HTTP_RESPONSE {\n     # Set a pool selector cookie from the pool that was was selected for this request\n    if {$selected ne ""}{\n        HTTP::cookie insert name $blue_green_cookie value $selected path "/"\n    }\n}`
     };
   }
 
-  buildDataGroupBody (declaration, create) {
+  buildDataGroupBody (records) {
     const body = {
-      'name': `${DATA_GROUP_PREFIX}${this.convertPathForObjectName(declaration.virtualServerFullPath)}`,
-      'partition': DEFAULT_PARTITION,
-      'records': [
-        {
-          'name': 'name',
-          'data': `${declaration.name}`
-        },
-        {
-          'name': 'virtualServerFullPath',
-          'data': `${declaration.virtualServerFullPath}`
-        },
-        {
-          'name': 'distribution',
-          'data': `${declaration.distribution.ratio},${declaration.distribution.bluePool},${declaration.distribution.greenPool}`
-        }
-      ]
+      'name': DATA_GROUP,
+      'partition': DEFAULT_PARTITION
     };
-    if (create) {
+    if (records) {
+      body['records'] = records.map(record => this.buildDGRecordFromDeclaration(record));
+    } else {
       body['type'] = 'string';
     }
     return body;
   }
 
-  convertPathForQuery (path) {
-    return path.replace(/\//g, '~');
+  buildDGRecordFromDeclaration (declaration) {
+    return {
+      'name': declaration.name,
+      'data': `${declaration.virtualServerFullPath},${declaration.ratio},${declaration.bluePool},${declaration.greenPool}`
+    };
   }
 
-  // trim off leading character, and convert the rest of the slashes to make a legal object name
-  convertPathForObjectName (path) {
-    return path.substring(1).replace(/\//g, '_');
+  buildDeclarationFromDGRecord (record) {
+    const dArray = record.data.split(',');
+    return {
+      name: record.name,
+      virtualServerFullPath: dArray[0],
+      ratio: Number(dArray[1]),
+      bluePool: dArray[2],
+      greenPool: dArray[3]
+    };
+  }
+
+  convertPathForQuery (path) {
+    return path.replace(/\//g, '~');
   }
 
   getRestOperationInstance (originalRestOp, workerContext, uri, body) {

@@ -1,80 +1,10 @@
-<!--The content below is only a placeholder and can be replaced.-->
 <ng-http-loader></ng-http-loader>
 <div style="text-align:center">
-  <h1><img class="logo" src="assets/images/f5-logo.png" alt="F5 logo" />{{ title }}</h1>
+  <h1><img class="f5-logo" src="assets/images/f5-logo.png" alt="F5 logo" />{{ title }}<img class="blue-green-logo"
+      src="assets/images/blue-green-logo.png" alt="BlueGreen logo" /></h1>
 </div>
-<form #formRef="ngForm">
-  <div class="selector-container more-v-space">
-    <div>
-      <mat-form-field>
-        <input matInput placeholder="Declaration Name" id="declarationName" name="declarationName" #declarationName="ngModel"
-          [(ngModel)]="declarationNameText" [ngModelOptions]="{ updateOn: 'blur' }" uniqueDeclarationName required>
-        <mat-error *ngIf="declarationName.invalid">
-          <div *ngIf="declarationName.errors?.uniqueDeclarationName">Name is already in use.</div>
-        </mat-error>
-      </mat-form-field>
-    </div>
-  </div>
-  <div class="flex-container selector-container more-v-space">
-    <div>
-      <mat-form-field>
-        <mat-select placeholder="Partition" matNativeControl required [(ngModel)]="selectedPartition" (ngModelChange)="loadVirtualServersAndPools($event)"
-          name="selectedPartition">
-          <mat-option *ngFor="let partition of partitions" [value]="partition">
-            {{partition}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-    <div>
-      <mat-form-field>
-        <mat-select placeholder="Virtual Server" matNativeControl required [(ngModel)]="selectedVirtualServer" name="selectedVirtualServer">
-          <mat-option *ngFor="let virtualServer of partitionVirtualServers" [value]="virtualServer">
-            {{virtualServer.name}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-  </div>
-  <div class="flex-container selector-container more-v-space">
-    <div>
-      <mat-form-field>
-        <mat-select placeholder="Blue Pool" matNativeControl required [(ngModel)]="bluePool" name="bluePool">
-          <mat-option *ngFor="let pool of partitionPools" [value]="pool">
-            {{pool.name}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-    <div>
-      <mat-form-field>
-        <mat-select placeholder="Green Pool" matNativeControl required [(ngModel)]="greenPool" name="greenPool">
-          <mat-option *ngFor="let pool of partitionPools" [value]="pool">
-            {{pool.name}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-  </div>
 
-  <div class="wide-container even-more-v-space">
-    <h4>Traffic Distribution</h4>
-    <mat-slider name="currentTrafficDist" [(ngModel)]="newTrafficDist" tickInterval="1"></mat-slider>
-    <div class="flex-container">
-      <span class="flex-item blue-bkg">
-        <div class="huge-font">{{100-newTrafficDist}}%</div>{{bluePool?.name}}
-      </span>
-      <span class="flex-item green-bkg">
-        <div class="huge-font">{{newTrafficDist}}%</div>{{greenPool?.name}}
-      </span>
-    </div>
-    <div class="flex-container selector-container more-v-space">
-      <div>
-        <button mat-raised-button color="basic" (click)="onCreate()" [disabled]="!formRef.form.valid">Create</button>
-      </div>
-      <div>
-        <button mat-raised-button color="basic" (click)="onDelete()" [disabled]="!formRef.form.valid">Delete</button>
-      </div>
-    </div>
-  </div>
-</form>
+<router-outlet></router-outlet>
+<div class="even-more-v-space">
+  <app-messages></app-messages>
+</div>

@@ -4,7 +4,9 @@ An iControl LX application (with API) to distribute traffic between application 
 There are 2 ways to configure: with a user interface, or using its declarative API.
 
 ### User Interface
-<img src="images/ui-screenshot.png">
+<img src="images/ui-screenshot-1.png">
+
+<img src="images/ui-screenshot-2.png">
 
 ### Using the API to POST a declaration using Postman
 <img src="images/api-screenshot.png">

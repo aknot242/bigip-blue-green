@@ -1,7 +1,7 @@
 {
   "name": "bigip-blue-green-api",
-  "version": "0.5.0",
-  "description": "UI for bigip-blue-green",
+  "version": "0.7.0",
+  "description": "API for bigip-blue-green",
   "repository": {
     "type": "git",
     "url": "https://github.com/aknot242/bigip-blue-green.git"
@@ -13,15 +13,14 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "eslint": "^5.12.0",
+    "eslint": "^5.13.0",
     "eslint-config-standard": "^12.0.0",
-    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-node": "^8.0.1",
     "eslint-plugin-promise": "^4.0.1",
     "eslint-plugin-standard": "^4.0.0"
   },
   "dependencies": {
-    "ajv": "^6.7.0",
-    "jsonata": "1.5.4"
+    "ajv": "^6.7.0"
   }
 }

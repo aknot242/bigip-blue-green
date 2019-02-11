@@ -1,4 +1,4 @@
-export interface ObjectReference {
+export class ObjectReference {
   name: string;
   fullPath: string;
 }

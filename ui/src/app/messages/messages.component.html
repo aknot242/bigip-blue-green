@@ -1,0 +1,5 @@
+<div *ngIf="messageService.messages.length">
+  <h2>Messages</h2>
+  <div><button mat-raised-button color="basic" (click)="messageService.clear()">clear</button></div>
+  <div class="v-space" *ngFor='let message of messageService.messages.reverse()'> {{message}} </div>
+</div>

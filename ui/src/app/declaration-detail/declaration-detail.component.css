@@ -1,0 +1,38 @@
+mat-slider {
+  width: 100%;
+}
+
+.selector-container {
+  width: 40%;
+}
+
+.wide-container {
+  width: 80%;
+}
+
+.flex-container {
+padding: 0;
+display: -webkit-box;
+display: -moz-box;
+display: -ms-flexbox;
+display: -webkit-flex;
+display: flex;
+-webkit-flex-flow: row wrap;
+flex-flow: row wrap;
+justify-content: space-between;
+}
+
+.flex-item {
+padding: 15px;
+margin-top: 20px;
+font-weight: bold;
+text-align: center;
+}
+
+.huge-font {
+  font-size: 3em;
+}
+
+button.i-need-my-space {
+  margin-right: 20px;
+}

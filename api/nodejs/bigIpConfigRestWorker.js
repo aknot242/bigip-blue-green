@@ -42,23 +42,16 @@ class BigIpConfigRestWorker {
   }
 
   completeSuccess (restOperation, output) {
-    if (typeof output === 'string') {
-      output = { message: output };
-    }
     restOperation.setStatusCode(200);
     restOperation.setBody(output);
     restOperation.complete();
   }
 
   completeError (restOperation, error) {
-    const err = {
-      code: error.code || 500,
-      error: error.message
-    };
-    this.util.logError(this.restHelper.jsonPrinter(err));
-
-    restOperation.setStatusCode(err.code);
-    restOperation.setBody(err);
+    const code = error.code || 500;
+    this.util.logError(this.restHelper.jsonPrinter(error));
+    restOperation.setStatusCode(code);
+    restOperation.setBody(error.message);
     restOperation.complete();
   }
 }

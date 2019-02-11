@@ -33,32 +33,43 @@ class BlueGreenConfigRestWorker {
    */
   onGet (restOperation) {
     const workerContext = this;
-    const objectId = restOperation.getUri().pathname.split('/')[4];
-    this.apiClient.getBlueGreenConfig(restOperation, workerContext, objectId)
-      .then((config) => {
-        if (config) {
-          restOperation.setBody(config);
-          this.completeRestOperation(restOperation);
-        } else {
-          const err = new Error(`declaration '${objectId}' does not exist`);
-          err.code = 404;
+    const declarationName = restOperation.getUri().pathname.split('/')[4];
+    if (!declarationName) {
+      this.apiClient.getAllBlueGreenDeclarations(restOperation, workerContext)
+        .then((declarations) => {
+          this.completeSuccess(restOperation, declarations);
+        })
+        .catch((err) => {
           this.completeError(restOperation, err);
-        }
-      })
-      .catch((err) => {
-        this.completeError(restOperation, err);
-      });
+        });
+    } else {
+      this.apiClient.getBlueGreenDeclaration(restOperation, workerContext, declarationName)
+        .then((declaration) => {
+          if (!this.util.isEmptyObject(declaration)) {
+            this.completeSuccess(restOperation, declaration);
+          } else {
+            const err = new Error(`declaration '${declarationName}' does not exist`);
+            err.code = 404;
+            this.completeError(restOperation, err);
+          }
+        })
+        .catch((err) => {
+          this.completeError(restOperation, err);
+        });
+    }
+  }
+
+  completeSuccess (restOperation, output) {
+    restOperation.setStatusCode(200);
+    restOperation.setBody(output);
+    restOperation.complete();
   }
 
   completeError (restOperation, error) {
-    const err = {
-      code: error.code || 500,
-      error: error.message
-    };
-    this.util.logError(this.restHelper.jsonPrinter(err));
-
-    restOperation.setStatusCode(err.code);
-    restOperation.setBody(err);
+    const code = error.code || 500;
+    this.util.logError(this.restHelper.jsonPrinter(error));
+    restOperation.setStatusCode(code);
+    restOperation.setBody(error.message);
     restOperation.complete();
   }
 }

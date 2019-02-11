@@ -1,0 +1,71 @@
+<form #formRef="ngForm">
+  <button mat-raised-button color="basic" (click)="goBack()">&lt;&nbsp;&lt;&nbsp;Back</button>
+  <div class="selector-container more-v-space">
+    <div>
+      <mat-form-field>
+        <input matInput placeholder="Declaration Name" id="declarationName" name="declarationName"
+          #declarationName="ngModel" [(ngModel)]="declaration.name" [ngModelOptions]="{ updateOn: 'blur' }"
+          [uniqueDeclarationName]="formMode === FormMode.Create" [disabled]="formMode === FormMode.Edit" required>
+        <mat-error *ngIf="declarationName.invalid">
+          <div *ngIf="declarationName.errors?.uniqueDeclarationName">Name is already in use.</div>
+        </mat-error>
+      </mat-form-field>
+    </div>
+  </div>
+  <div class="flex-container selector-container more-v-space">
+    <div>
+      <mat-form-field>
+        <mat-select style="width:460px" placeholder="Virtual Server" matNativeControl required
+          [(ngModel)]="declaration.virtualServerFullPath" name="selectedVirtualServer">
+          <mat-option *ngFor="let virtualServer of virtualServerList" [value]="virtualServer">
+            {{ virtualServer }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <h6>Note: The virtual server must already have an HTTP Profile.</h6>
+    </div>
+  </div>
+  <div class="flex-container selector-container more-v-space">
+    <div>
+      <mat-form-field>
+        <mat-select style="width:460px" placeholder="Blue Pool" matNativeControl required
+          [(ngModel)]="declaration.bluePool" name="bluePool">
+          <mat-option *ngFor="let pool of poolList" [value]="pool">
+            {{pool}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+  <div class="flex-container selector-container more-v-space">
+    <div>
+      <mat-form-field>
+        <mat-select style="width:460px" placeholder="Green Pool" matNativeControl required
+          [(ngModel)]="declaration.greenPool" name="greenPool">
+          <mat-option *ngFor="let pool of poolList" [value]="pool">
+            {{pool}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <div class="wide-container even-more-v-space">
+    <h4>Traffic Distribution</h4>
+    <mat-slider name="currentTrafficDist" [(ngModel)]="currentTrafficDist" tickInterval="1"></mat-slider>
+    <div class="flex-container">
+      <span class="flex-item blue-bkg">
+        <div class="huge-font">{{100-currentTrafficDist}}%</div>{{shortenPath(declaration.bluePool)}}
+      </span>
+      <span class="flex-item green-bkg">
+        <div class="huge-font">{{currentTrafficDist}}%</div>{{shortenPath(declaration.greenPool)}}
+      </span>
+    </div>
+    <div class="flex-container selector-container more-v-space">
+      <div>
+        <button class="i-need-my-space" mat-raised-button color="basic" (click)="goBack()">Cancel</button>
+        <button mat-raised-button color="primary" (click)="save()" [disabled]="!formRef.form.valid">Save</button>
+      </div>
+    </div>
+  </div>
+</form>
