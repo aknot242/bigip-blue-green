@@ -11,6 +11,7 @@
 const BlueGreenSchema = require('./schema.json');
 const Ajv = require('ajv');
 const F5Logger = require('f5-logger');
+const COMMON_PARTITION = 'Common';
 
 class Util {
   constructor (moduleName, debugEnabled) {
@@ -80,12 +81,23 @@ class Util {
     let jsonInput = this.isJson(input);
     // Validate the input against the schema
     let ajv = new Ajv({ jsonPointers: true, allErrors: false, verbose: true, useDefaults: false });
+    const formats = [
+      {
+        name: 'pool-must-be-accessible-to-virtual-server',
+        check: poolRef => {
+          if (jsonInput.virtualServerFullPath === undefined) return false;
+          const poolPartition = this.getLowerCasePartition(poolRef);
+          return poolPartition === this.getLowerCasePartition(jsonInput.virtualServerFullPath) || poolPartition === COMMON_PARTITION.toLowerCase()
+        }
+      }];
+
+    formats.forEach(format => ajv.addFormat(format.name, format.check));
     let validate = ajv.compile(BlueGreenSchema);
     let valid = validate(jsonInput);
     if (valid === false) {
       const error = this.safeAccess(() => validate.errors[0].message, '');
       if (error !== '') {
-        message = `Validation error: ${this.translateAjvError(validate.errors[0])}`;
+        message = this.translateAjvError(validate.errors[0]);
       } else {
         message = 'Unknown validation error.';
       }
@@ -134,14 +146,18 @@ class Util {
 
   getApiVersion () {
     try {
-      const pjson = require('./package.json');
+      const pjson = require('../package.json');
       return pjson.version;
     } catch (err) {
       this.logError(`Unable to determine API package version: ${err}`);
       return "UNKNOWN";
     }
   }
+
+  getLowerCasePartition (fullPath) {
+    return fullPath.split('/')[1].toLowerCase()
+  }
+
 }
 
 module.exports = Util;
-

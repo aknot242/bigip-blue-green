@@ -15,7 +15,7 @@
   <div class="flex-container selector-container more-v-space">
     <div>
       <mat-form-field>
-        <mat-select style="width:460px" placeholder="Virtual Server" matNativeControl required
+        <mat-select style="width:460px" placeholder="Virtual Server" (ngModelChange)="filterPools($event)" matNativeControl required
           [(ngModel)]="declaration.virtualServerFullPath" name="selectedVirtualServer">
           <mat-option *ngFor="let virtualServer of virtualServerList" [value]="virtualServer">
             {{ virtualServer }}
@@ -30,7 +30,7 @@
       <mat-form-field>
         <mat-select style="width:460px" placeholder="Blue Pool" matNativeControl required
           [(ngModel)]="declaration.bluePool" name="bluePool">
-          <mat-option *ngFor="let pool of poolList" [value]="pool">
+          <mat-option *ngFor="let pool of currentPoolList" [value]="pool">
             {{pool}}
           </mat-option>
         </mat-select>
@@ -42,7 +42,7 @@
       <mat-form-field>
         <mat-select style="width:460px" placeholder="Green Pool" matNativeControl required
           [(ngModel)]="declaration.greenPool" name="greenPool">
-          <mat-option *ngFor="let pool of poolList" [value]="pool">
+          <mat-option *ngFor="let pool of currentPoolList" [value]="pool">
             {{pool}}
           </mat-option>
         </mat-select>

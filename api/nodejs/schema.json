@@ -19,7 +19,7 @@
       "examples": [
         "My_BlueGreen_Config"
       ],
-      "pattern": "^[A-Za-z][0-9A-Za-z_]{0,47}$"
+      "pattern": "^[A-Za-z][0-9A-Za-z_-]{0,47}$"
     },
     "virtualServerFullPath": {
       "$id": "#/properties/virtualServerFullPath",
@@ -43,6 +43,7 @@
     "bluePool": {
       "$id": "#/properties/distribution/properties/bluePool",
       "type": "string",
+      "format": "pool-must-be-accessible-to-virtual-server",
       "title": "The Blue Pool Schema",
       "default": "",
       "examples": [
@@ -53,6 +54,7 @@
     "greenPool": {
       "$id": "#/properties/distribution/properties/greenPool",
       "type": "string",
+      "format": "pool-must-be-accessible-to-virtual-server",
       "title": "The Green Pool Schema",
       "default": "",
       "examples": [

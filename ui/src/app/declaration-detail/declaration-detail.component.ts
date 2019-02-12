@@ -19,12 +19,12 @@ export class DeclarationDetailComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute) { }
 
-
   FormMode = FormMode;
   formMode = FormMode.Create;
   declaration = new Declaration();
   virtualServerList = new Array<string>();
-  poolList = new Array<string>();
+  fullPoolList = new Array<string>();
+  currentPoolList = new Array<string>();
   currentTrafficDist = 55;
 
   ngOnInit() {
@@ -34,7 +34,8 @@ export class DeclarationDetailComponent implements OnInit {
         this.bigIpService.getBigIpConfigData()
           .subscribe((config) => {
             this.virtualServerList = config.virtualServers.map(v => v.fullPath) || [];
-            this.poolList = config.pools.map(p => p.fullPath) || [];
+            this.fullPoolList = config.pools.map(p => p.fullPath) || [];
+            this.currentPoolList = this.fullPoolList;
             const nameParam = this.route.snapshot.paramMap.get('name')
             if (nameParam) {
               this.getDeclaration(nameParam);
@@ -44,12 +45,17 @@ export class DeclarationDetailComponent implements OnInit {
       })
   }
 
-  getDeclaration(declarationName): void {
+  getDeclaration(declarationName: string): void {
     this.bigIpService.getDeclaration(declarationName)
       .subscribe(declaration => {
         this.declaration = declaration;
         this.currentTrafficDist = this.ratioToSliderValue(declaration.ratio);
       });
+  }
+
+  filterPools(selectedVirtualServer: string) {
+    const partition = selectedVirtualServer.split('/')[1].toLowerCase();
+    this.currentPoolList = this.fullPoolList.filter(p => p.toLowerCase().startsWith(`/${partition}`) || p.toLowerCase().startsWith('/common'));
   }
 
   goBack(): void {

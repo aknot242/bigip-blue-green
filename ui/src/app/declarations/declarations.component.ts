@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material';
-import { Location } from '@angular/common';
 import { switchMap, catchError } from 'rxjs/operators';
 import { BigIpService, AuthService } from '../bigip/services';
 import { Declaration } from '../bigip/models/declaration';
@@ -19,8 +18,7 @@ export class DeclarationsComponent implements OnInit {
 
   constructor(private bigIpService: BigIpService,
     private authService: AuthService,
-    private dialog: MatDialog,
-    private location: Location) { }
+    private dialog: MatDialog) { }
 
   ngOnInit() {
     this.declarations = this.getDeclarations();
@@ -45,7 +43,7 @@ export class DeclarationsComponent implements OnInit {
         data: { message: message },
       });
       dialogRef.afterClosed().subscribe(() => {
-        this.location.go('/xui/');
+        window.location.href = '/xui/';
       });
     });
   }
