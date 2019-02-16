@@ -69,42 +69,28 @@ class Util {
     }
   }
 
-  /**
-   * Check for some values, enforce some defaults. Uses Ajv JSON schema validator.
-   *
-   * @param {(object|string)} input
-   *
-   * @return {boolean}
-   */
   validateDeclaration (input) {
-    let message = 'success';
-    let jsonInput = this.isJson(input);
-    // Validate the input against the schema
-    let ajv = new Ajv({ jsonPointers: true, allErrors: false, verbose: true, useDefaults: false });
-    const formats = [
-      {
-        name: 'pool-must-be-accessible-to-virtual-server',
-        check: poolRef => {
-          if (jsonInput.virtualServerFullPath === undefined) return false;
-          const poolPartition = this.getLowerCasePartition(poolRef);
-          return poolPartition === this.getLowerCasePartition(jsonInput.virtualServerFullPath) || poolPartition === COMMON_PARTITION.toLowerCase()
-        }
-      }];
+    return new Promise((resolve, reject) => {
+      let message = 'success';
+      const jsonInput = this.isJson(input);
+      // Validate the input against the schema
+      let ajv = new Ajv({ jsonPointers: true, allErrors: false, verbose: true, useDefaults: false });
 
-    formats.forEach(format => ajv.addFormat(format.name, format.check));
-    let validate = ajv.compile(BlueGreenSchema);
-    let valid = validate(jsonInput);
-    if (valid === false) {
-      const error = this.safeAccess(() => validate.errors[0].message, '');
-      if (error !== '') {
-        message = this.translateAjvError(validate.errors[0]);
-      } else {
-        message = 'Unknown validation error.';
+      this.getSchemaFormats(jsonInput).forEach(format => ajv.addFormat(format.name, format.check));
+      const validate = ajv.compile(BlueGreenSchema);
+      const valid = validate(jsonInput);
+      if (valid === false) {
+        const error = this.safeAccess(() => validate.errors[0].message, '');
+        if (error !== '') {
+          message = this.translateAjvError(validate.errors[0]);
+        } else {
+          message = 'Unknown validation error.';
+        }
+        reject({ isValid: false, message: message, json: jsonInput });
       }
-      return { isValid: false, message: message, json: jsonInput };
-    }
-    this.logDebug(`validateDeclaration(): ${message}`);
-    return { isValid: true, message: message, json: jsonInput };
+      this.logDebug(`validateDeclaration(): ${message}`);
+      resolve({ isValid: true, message: message, json: jsonInput });
+    });
   }
 
   /**
@@ -158,6 +144,31 @@ class Util {
     return fullPath.split('/')[1].toLowerCase()
   }
 
+  getSchemaFormats (declaration) {
+    return [
+      {
+        name: 'pool-must-be-accessible-to-virtual-server',
+        check: poolRef => {
+          if (declaration.virtualServerFullPath === undefined) return false;
+          const poolPartition = this.getLowerCasePartition(poolRef);
+          return poolPartition === this.getLowerCasePartition(declaration.virtualServerFullPath) || poolPartition === COMMON_PARTITION.toLowerCase()
+        }
+      }];
+  }
+
+  /**
+  * Safely access object and property values without having to stack up safety checks for undefined values
+  * @param {*} func A function that encloses the value to check
+  * @param {*} fallbackValue An optional default value that is returned if any of the values in the object heirarchy are undefined. If this parameter isn't supplied, undefined will be returned instead of a default fallback value.
+  */
+  safeAccess (func, fallbackValue) {
+    try {
+      var value = func();
+      return (value === null || value === undefined) ? fallbackValue : value;
+    } catch (e) {
+      return fallbackValue;
+    }
+  };
 }
 
 module.exports = Util;

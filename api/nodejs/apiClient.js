@@ -14,7 +14,7 @@ class ApiClient {
     this.util = new Util('ApiClient', false);
   }
 
-  getAllData (originalRestOp, workerContext) {
+  getAllBigIpConfigData (originalRestOp, workerContext) {
     const getVsPromise = this.getVirtualServers(originalRestOp, workerContext);
     const getPoolsPromise = this.getPools(originalRestOp, workerContext);
     return Promise.all([getVsPromise, getPoolsPromise])
@@ -22,7 +22,8 @@ class ApiClient {
         return { virtualServers: values[0], pools: values[1] };
       })
       .catch((err) => {
-        this.util.logError(`getAllData(): ${err}`);
+        this.util.logError(`getAllBigIpConfigData(): ${err}`);
+        throw err;
       });
   }
 
@@ -37,20 +38,42 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`getPartitions(): ${err}`);
+        throw err;
       });
   }
 
   /** GET virtual servers from the big-ip */
   getVirtualServers (originalRestOp, workerContext) {
-    const uri = workerContext.restHelper.makeRestjavadUri('/mgmt/tm/ltm/virtual', '$select=name,fullPath');
+    const uri = workerContext.restHelper.makeRestjavadUri('/mgmt/tm/ltm/virtual', 'expandSubcollections=true&$select=name,fullPath,profilesReference/items/nameReference/link');
     return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
       .then((response) => {
         const body = response.getBody();
         const items = body.items || [];
-        return items.map(v => { return { name: v.name, fullPath: v.fullPath }; });
+        return items.map(v => { return { name: v.name, fullPath: v.fullPath, hasHttpProfile: this.virtualServerHasHttpProfile(v) }; });
       })
       .catch((err) => {
         this.util.logError(`getVirtualServers(): ${err}`);
+        throw err;
+      });
+  }
+
+  /** GET virtual server by full path from the big-ip */
+  getVirtualServer (originalRestOp, workerContext, virtualServerFullPath) {
+    const vsNamePath = this.convertPathForQuery(virtualServerFullPath);
+    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/virtual/${vsNamePath}`, 'expandSubcollections=true&$select=name,fullPath,profilesReference/items/nameReference/link');
+    return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
+      .then((response) => {
+        const body = response.getBody();
+        return { name: body.name, fullPath: body.fullPath, hasHttpProfile: this.virtualServerHasHttpProfile(body) };
+      })
+      .catch((err) => {
+        const errorStatusCode = err.getResponseOperation().getStatusCode();
+        // virtual server does not exist
+        if (errorStatusCode === 404) {
+          return {};
+        }
+        this.util.logError(`getVirtualServer(): ${err}`);
+        throw err;
       });
   }
 
@@ -65,6 +88,27 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`getPools(): ${err}`);
+        throw err;
+      });
+  }
+
+  /** GET pool by full path from the big-ip */
+  getPool (originalRestOp, workerContext, poolFullPath) {
+    const poolNamePath = this.convertPathForQuery(poolFullPath);
+    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/pool/${poolNamePath}`, '$select=name,fullPath');
+    return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
+      .then((response) => {
+        const body = response.getBody();
+        return { name: body.name, fullPath: body.fullPath };
+      })
+      .catch((err) => {
+        const errorStatusCode = err.getResponseOperation().getStatusCode();
+        // pool does not exist
+        if (errorStatusCode === 404) {
+          return {};
+        }
+        this.util.logError(`getPool(): ${err}`);
+        throw err;
       });
   }
 
@@ -81,6 +125,7 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`buildBlueGreenObjects(): ${err}`);
+        throw err;
       });
   }
 
@@ -105,6 +150,7 @@ class ApiClient {
           return [];
         }
         this.util.logError(`getAllBlueGreenDeclarations(): ${err}`);
+        throw err;
       });
   }
 
@@ -112,10 +158,11 @@ class ApiClient {
   getBlueGreenDeclaration (originalRestOp, workerContext, declarationName) {
     return this.getAllBlueGreenDeclarations(originalRestOp, workerContext)
       .then((declarations) => {
-        return declarations.filter(declaration => declaration.name === declarationName)[0] || {};
+        return declarations.find(declaration => declaration.name === declarationName) || {};
       })
       .catch((err) => {
         this.util.logError(`getBlueGreenDeclaration(): ${err}`);
+        throw err;
       });
   }
 
@@ -123,13 +170,14 @@ class ApiClient {
   isDeclarationConflicting (originalRestOp, workerContext, declarationToCheck) {
     return this.getAllBlueGreenDeclarations(originalRestOp, workerContext)
       .then((declarations) => {
-        const conflictingDeclaration = declarations.filter(declaration =>
+        const conflictingDeclaration = declarations.find(declaration =>
           declaration.name !== declarationToCheck.name &&
           declaration.virtualServerFullPath === declarationToCheck.virtualServerFullPath);
-        return { conflict: conflictingDeclaration.length > 0, reference: conflictingDeclaration[0] };
+        return { conflict: conflictingDeclaration !== undefined, reference: conflictingDeclaration };
       })
       .catch((err) => {
         this.util.logError(`isDeclarationConflicting(): ${err}`);
+        throw err;
       });
   }
 
@@ -142,6 +190,7 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`blueGreenDeclarationExists(): ${err}`);
+        throw err;
       });
   }
 
@@ -163,10 +212,12 @@ class ApiClient {
           })
           .catch((err) => {
             this.util.logError(`setBlueGreenDeclaration() PUT: ${err}`);
+            throw err;
           });
       })
       .catch((err) => {
         this.util.logError(`setBlueGreenDeclaration(): ${err}`);
+        throw err;
       });
   }
 
@@ -187,10 +238,12 @@ class ApiClient {
           })
           .catch((err) => {
             this.util.logError(`deleteBlueGreenDeclaration() PUT: ${err}`);
+            throw err;
           });
       })
       .catch((err) => {
         this.util.logError(`deleteBlueGreenDeclaration(): ${err}`);
+        throw err;
       });
   }
 
@@ -205,6 +258,7 @@ class ApiClient {
           return this.createDataGroup(originalRestOp, workerContext);
         }
         this.util.logError(`ensureDataGroupExists(): ${err}`);
+        throw err;
       });
   }
 
@@ -219,6 +273,7 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`createDataGroup() POST: ${err}`);
+        throw err;
       });
   }
 
@@ -232,6 +287,7 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`createShimIRule() POST: ${err}`);
+        throw err;
       });
   }
 
@@ -246,6 +302,7 @@ class ApiClient {
           return false;
         }
         this.util.logError(`shimIRuleExists(): ${err}`);
+        throw err;
       });
   }
 
@@ -275,6 +332,7 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`shimIRule(): ${err}`);
+        throw err;
       });
   }
 
@@ -286,6 +344,7 @@ class ApiClient {
       .then((data) => data.body['rules'])
       .catch((err) => {
         this.util.logError(`getIRulesByVirtualServer(): ${err}`);
+        throw err;
       });
   }
 
@@ -301,6 +360,7 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`setIRulesByVirtualServer(): ${err}`);
+        throw err;
       });
   }
 
@@ -313,6 +373,7 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`unShimIRuleAndDeleteDeclaration(): ${err}`);
+        throw err;
       });
   }
 
@@ -335,6 +396,7 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`unShimIRule(): ${err}`);
+        throw err;
       });
   }
 
@@ -350,11 +412,12 @@ class ApiClient {
   buildDataGroupBody (records) {
     const body = {
       'name': DATA_GROUP,
-      'partition': DEFAULT_PARTITION,
-      'type': 'string'
+      'partition': DEFAULT_PARTITION
     };
     if (records) {
       body['records'] = records.map(record => this.buildDGRecordFromDeclaration(record));
+    } else {
+      body['type'] = 'string';
     }
     return body;
   }
@@ -390,6 +453,14 @@ class ApiClient {
       restOp.setBody(body);
     }
     return restOp;
+  }
+
+  virtualServerHasHttpProfile (virtualServer) {
+    const profilesArray = virtualServer.profilesReference.items || [];
+    this.util.logDebug(`virtualServerHasHttpProfile(): virtualServer ${JSON.stringify(virtualServer)}`);
+    // eslint-disable-next-line no-useless-escape
+    const pattern = new RegExp('\/ltm\/profile\/http\/');
+    return profilesArray.filter(p => this.util.safeAccess(() => p.nameReference.link, false) && pattern.test(p.nameReference.link)).length > 0;
   }
 }
 

@@ -32,7 +32,7 @@ class BigIpConfigRestWorker {
    */
   onGet (restOperation) {
     const workerContext = this;
-    this.apiClient.getAllData(restOperation, workerContext)
+    this.apiClient.getAllBigIpConfigData(restOperation, workerContext)
       .then((items) => {
         this.completeSuccess(restOperation, items);
       })

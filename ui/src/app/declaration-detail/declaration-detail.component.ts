@@ -33,7 +33,9 @@ export class DeclarationDetailComponent implements OnInit {
       .subscribe(() => {
         this.bigIpService.getBigIpConfigData()
           .subscribe((config) => {
-            this.virtualServerList = config.virtualServers.map(v => v.fullPath) || [];
+            this.virtualServerList = config.virtualServers
+            .filter(v => v.hasHttpProfile)
+            .map(v => v.fullPath) || [];
             this.fullPoolList = config.pools.map(p => p.fullPath) || [];
             this.currentPoolList = this.fullPoolList;
             const nameParam = this.route.snapshot.paramMap.get('name')

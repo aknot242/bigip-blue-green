@@ -31,39 +31,55 @@ class DeclarationRestWorker {
     this.util.logDebug('blue-green declaration POST request');
 
     let declaration = restOperation.getBody();
-    let validatedDeclaration = this.util.validateDeclaration(declaration);
-    if (validatedDeclaration.isValid) {
-      this.util.logInfo('Valid blue-green declaration');
-      this.apiClient.isDeclarationConflicting(restOperation, workerContext, validatedDeclaration.json)
-        .then((result) => {
-          if (!result.conflict) {
-            this.util.logInfo(`No existing declaration conflicts with provided blue-green declaration`);
-            this.apiClient.buildBlueGreenObjects(restOperation, workerContext, validatedDeclaration.json)
-              .then(() => {
-                restOperation.setBody(validatedDeclaration.json);
-                this.completeRestOperation(restOperation);
-              })
-              .catch((err) => {
-                this.completeError(restOperation, err);
-              });
-          } else {
-            const err = new Error(`Virtual Server in declaration '${validatedDeclaration.json.name}' conflicts with existing declaration '${result.reference.name}'`);
-            err.code = 422;
-            this.completeError(restOperation, err);
-          }
-        });
-    } else {
-      const err = new Error(`Invalid blue-green declaration: ${validatedDeclaration.message}`);
-      err.code = 422;
-      this.completeError(restOperation, err);
-    }
+
+    this.util.validateDeclaration(declaration)
+      .then((validatedDeclaration) => {
+        if (validatedDeclaration.isValid) {
+          this.util.logInfo('Schema valid blue-green declaration');
+          declaration = validatedDeclaration.json;
+        } else {
+          throw new Error(`Schema invalid blue-green declaration: ${validatedDeclaration.message}`);
+        }
+      })
+      .then(() => this.apiClient.getVirtualServer(restOperation, workerContext, declaration.virtualServerFullPath))
+      .then((vs) => {
+        if (this.util.isEmptyObject(vs)) {
+          throw new Error('Virtual Server does not exist.');
+        } else if (!vs.hasHttpProfile) {
+          throw new Error('Virtual Server has no Http Profile.');
+        }
+      })
+      .then(() => this.apiClient.getPools(restOperation, workerContext))
+      .then((pools) => {
+        if (!pools.find(p => p.fullPath === declaration.bluePool)) throw new Error(`Blue pool '${declaration.bluePool}' does not exist.`);
+        if (!pools.find(p => p.fullPath === declaration.greenPool)) throw new Error(`Green pool '${declaration.greenPool}' does not exist.`);
+      })
+      .then(() => this.apiClient.isDeclarationConflicting(restOperation, workerContext, declaration))
+      .then((result) => {
+        if (result.conflict) {
+          throw new Error(`Virtual Server in declaration '${declaration.name}' conflicts with existing declaration '${result.reference.name}'`);
+        }
+      })
+      .then(() => {
+        this.util.logInfo(`No existing declaration conflicts with provided blue-green declaration`);
+        return this.apiClient.buildBlueGreenObjects(restOperation, workerContext, declaration);
+      })
+      .then(() => {
+        restOperation.setBody(declaration);
+        this.completeRestOperation(restOperation);
+      })
+      .catch((err) => {
+        err.code = 422;
+        this.util.logError(`declarationRestWorker onPost(): ${err}`);
+        this.completeError(restOperation, err);
+      });
   }
 
   /**
- * Handle HTTP DELETE method
- * @param {object} restOperation
- * @returns {void}
- */
+  * Handle HTTP DELETE method
+  * @param {object} restOperation
+  * @returns {void}
+  */
   onDelete (restOperation) {
     const workerContext = this;
     const objectId = restOperation.getUri().pathname.split('/')[4];
@@ -71,20 +87,17 @@ class DeclarationRestWorker {
     this.util.logDebug(`blue-green declaration DELETE request ${objectId}`);
 
     this.apiClient.blueGreenDeclarationExists(restOperation, workerContext, objectId)
-      .then((declarationExists) => {
-        if (declarationExists) {
-          this.apiClient.unShimIRuleAndDeleteDeclaration(restOperation, workerContext, objectId)
-            .then(() => {
-              this.completeSuccess(restOperation, `{"message": "declaration '${objectId}' successfully deleted"}`);
-            })
-            .catch((err) => {
-              this.completeError(restOperation, err);
-            });
+      .then((exists) => {
+        if (exists) {
+          return this.apiClient.unShimIRuleAndDeleteDeclaration(restOperation, workerContext, objectId);
         } else {
           const err = new Error(`declaration '${objectId}' does not exist`);
           err.code = 404;
-          this.completeError(restOperation, err);
+          throw err;
         }
+      })
+      .then(() => {
+        this.completeSuccess(restOperation, `{"message": "declaration '${objectId}' successfully deleted"}`);
       })
       .catch((err) => {
         this.completeError(restOperation, err);
@@ -92,9 +105,9 @@ class DeclarationRestWorker {
   }
 
   /**
- * Create a handler for requests to/example
- * @return {Object} example of the object model for this worker
- */
+  * Create a handler for requests to/example
+  * @return {Object} example of the object model for this worker
+  */
   getExampleState () {
     const example = {
       'name': 'My_BlueGreen_Declaration',
