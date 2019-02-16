@@ -30,12 +30,12 @@ There are 2 ways to configure BIG-IP BlueGreen:
 
 ## Screenshots
 ### User Interface
-<img src="images/ui-screenshot-1.png">
+<img src="images/ui-screenshot-1.png" style="width:900px">
 
-<img src="images/ui-screenshot-2.png">
+<img src="images/ui-screenshot-2.png" style="width:900px">
 
 ### Using the API to POST a declaration using Postman
-<img src="images/api-screenshot.png">
+<img src="images/api-screenshot.png" style="width:800px">
 
 ## Package Build
 ```

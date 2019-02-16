@@ -405,7 +405,7 @@ class ApiClient {
       'kind': 'tm:ltm:rule:rulestate',
       'name': SHIM_IRULE_NAME,
       'fullPath': shimIRuleFullPath,
-      'apiAnonymous': `# API Version ${this.util.getApiVersion()}\nproc get_datagroup_value {dg_name vs_full_path} {\n    set dg [class get $dg_name]\n    foreach x $dg {\n        if { $x starts_with $vs_full_path} {\n            return $x\n            break\n        }\n    }\n}\n\nproc get_cookie_name {vs_full_path}   {\n    return "${COOKIE_PREFIX}[string map "/ _" $vs_full_path]"\n}\n\nwhen HTTP_REQUEST {\n    # Use this to set the cookie name as well as to look up the ratio and pool name settings from the datagroup\n    set traffic_dist_rule [call get_datagroup_value "${DATA_GROUP}" [virtual name]]\n    set fields [split $traffic_dist_rule ","]\n    set vs [lindex $fields 0]\n    set ratio [lindex $fields 1]\n    set blue_pool [lindex $fields 2]\n    set green_pool [lindex $fields 3]\n    set blue_green_cookie [call get_cookie_name $vs]\n\n    # Check if there is a pool selector cookie in the request\n    if { [HTTP::cookie exists $blue_green_cookie] } {\n    \n        # Select the pool from the cookie\n        pool [HTTP::cookie $blue_green_cookie]\n        set selected ""\n    } else {\n    \n        # No pool selector cookie, so choose a pool based on the datagroup ratio\n        set rand [expr { rand() }]\n    \n        if { $rand < $ratio } { \n            pool $blue_pool\n            set selected $blue_pool\n        } else {\n            pool $green_pool\n            set selected $green_pool\n        }\n    }\n}\n\nwhen HTTP_RESPONSE {\n     # Set a pool selector cookie from the pool that was was selected for this request\n    if {$selected ne ""}{\n        HTTP::cookie insert name $blue_green_cookie value $selected path "/"\n    }\n}`
+      'apiAnonymous': `# API Version ${this.util.getApiVersion()}\nproc get_datagroup_value {dg_name vs_full_path} {\n    set dg [class get $dg_name]\n    foreach x $dg {\n        if { $x starts_with $vs_full_path} {\n            return $x\n            break\n        }\n    }\n}\n\nproc get_cookie_name {vs_full_path}   {\n    return "${COOKIE_PREFIX}[string map "/ _" $vs_full_path]"\n}\n\nwhen HTTP_REQUEST {\n    # Use this to set the cookie name as well as to look up the distribution and pool name settings from the datagroup\n    set traffic_dist_rule [call get_datagroup_value "${DATA_GROUP}" [virtual name]]\n    set fields [split $traffic_dist_rule ","]\n    set vs [lindex $fields 0]\n    set distribution [lindex $fields 1]\n    set blue_pool [lindex $fields 2]\n    set green_pool [lindex $fields 3]\n    set blue_green_cookie [call get_cookie_name $vs]\n\n    # Check if there is a pool selector cookie in the request\n    if { [HTTP::cookie exists $blue_green_cookie] } {\n    \n        # Select the pool from the cookie\n        pool [HTTP::cookie $blue_green_cookie]\n        set selected ""\n    } else {\n    \n        # No pool selector cookie, so choose a pool based on the datagroup distribution\n        set rand [expr { rand() }]\n    \n        if { $rand < $distribution } { \n            pool $blue_pool\n            set selected $blue_pool\n        } else {\n            pool $green_pool\n            set selected $green_pool\n        }\n    }\n}\n\nwhen HTTP_RESPONSE {\n     # Set a pool selector cookie from the pool that was was selected for this request\n    if {$selected ne ""}{\n        HTTP::cookie insert name $blue_green_cookie value $selected path "/"\n    }\n}`
     };
   }
 
@@ -425,7 +425,7 @@ class ApiClient {
   buildDGRecordFromDeclaration (declaration) {
     return {
       'name': declaration.name,
-      'data': `${declaration.virtualServerFullPath},${declaration.ratio},${declaration.bluePool},${declaration.greenPool}`
+      'data': `${declaration.virtualServerFullPath},${declaration.distribution},${declaration.bluePool},${declaration.greenPool}`
     };
   }
 
@@ -434,7 +434,7 @@ class ApiClient {
     return {
       name: record.name,
       virtualServerFullPath: dArray[0],
-      ratio: Number(dArray[1]),
+      distribution: Number(dArray[1]),
       bluePool: dArray[2],
       greenPool: dArray[3]
     };

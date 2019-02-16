@@ -51,7 +51,7 @@ export class DeclarationDetailComponent implements OnInit {
     this.bigIpService.getDeclaration(declarationName)
       .subscribe(declaration => {
         this.declaration = declaration;
-        this.currentTrafficDist = this.ratioToSliderValue(declaration.ratio);
+        this.currentTrafficDist = this.distributionFactorToSliderValue(declaration.distribution);
       });
   }
 
@@ -65,7 +65,7 @@ export class DeclarationDetailComponent implements OnInit {
   }
 
   save(): void {
-    this.declaration.ratio = this.sliderValueToRatio(this.currentTrafficDist);
+    this.declaration.distribution = this.sliderValueToDistributionFactor(this.currentTrafficDist);
     this.bigIpService.saveDeclaration(this.declaration)
       .subscribe((result) => {
         if (result) {
@@ -80,11 +80,11 @@ export class DeclarationDetailComponent implements OnInit {
     return array[array.length - 1];
   }
 
-  sliderValueToRatio(val: number) {
+  sliderValueToDistributionFactor(val: number) {
     return Number((100 - val) / 100);
   }
 
-  ratioToSliderValue(val: number) {
+  distributionFactorToSliderValue(val: number) {
     return Math.round(Number(100 - (val * 100)));
   }
 }

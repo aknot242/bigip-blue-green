@@ -110,11 +110,11 @@ class DeclarationRestWorker {
   */
   getExampleState () {
     const example = {
-      'name': 'My_BlueGreen_Declaration',
-      'virtualServerFullPath': '/MyPartition/Application_1/serviceMain',
-      'ratio': 0.5,
-      'bluePool': 'blue_pool',
-      'greenPool': 'green_pool'
+      'name': 'Sample1',
+      'virtualServerFullPath': '/Common/MyVirtualServer',
+      'distribution': 0.8,
+      'bluePool': '/Common/blue_pool',
+      'greenPool': '/Common/green_pool'
     };
     return example;
   }

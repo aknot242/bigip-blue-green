@@ -6,7 +6,7 @@
   "required": [
     "name",
     "virtualServerFullPath",
-    "ratio",
+    "distribution",
     "bluePool",
     "greenPool"
   ],
@@ -31,17 +31,17 @@
       ],
       "pattern": "^\\x2f[^\\x00-\\x19\\x22#'*<>?\\x5b-\\x5d\\x7b-\\x7d\\x7f]+$"
     },
-    "ratio": {
-      "$id": "#/properties/distribution/properties/ratio",
+    "distribution": {
+      "$id": "#/properties/distribution",
       "type": "number",
-      "title": "The Ratio Schema",
+      "title": "The Distribution Schema",
       "default": 0.0,
       "examples": [
         0.5
       ]
     },
     "bluePool": {
-      "$id": "#/properties/distribution/properties/bluePool",
+      "$id": "#/properties/bluePool",
       "type": "string",
       "format": "pool-must-be-accessible-to-virtual-server",
       "title": "The Blue Pool Schema",
@@ -52,7 +52,7 @@
       "pattern": "^\\x2f[^\\x00-\\x19\\x22#'*<>?\\x5b-\\x5d\\x7b-\\x7d\\x7f]+$"
     },
     "greenPool": {
-      "$id": "#/properties/distribution/properties/greenPool",
+      "$id": "#/properties/greenPool",
       "type": "string",
       "format": "pool-must-be-accessible-to-virtual-server",
       "title": "The Green Pool Schema",

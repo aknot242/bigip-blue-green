@@ -154,7 +154,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"Sample1\",\n    \"virtualServerFullPath\": \"/DVWA/Application_1/serviceMain\",\n    \"ratio\": 0.45,\n    \"bluePool\": \"/Sample_01/Application_1/web_pool\",\n    \"greenPool\": \"/Sample_01/testapp.app/testapp_pool\"\n}"
+					"raw": "{\n    \"name\": \"Sample1\",\n    \"virtualServerFullPath\": \"/Common/MyVirtualServer\",\n    \"distribution\": 0.8,\n    \"bluePool\": \"/Common/blue_pool\",\n    \"greenPool\": \"/Common/green_pool\"\n}"
 				},
 				"url": {
 					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/blue-green/declare",
@@ -193,7 +193,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/blue-green/declare/DVWA_App",
+					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/blue-green/declare/Sample1",
 					"protocol": "https",
 					"host": [
 						"{{bigip_a_mgmt}}"
@@ -203,7 +203,7 @@
 						"shared",
 						"blue-green",
 						"declare",
-						"DVWA_App"
+						"Sample1"
 					]
 				}
 			},
