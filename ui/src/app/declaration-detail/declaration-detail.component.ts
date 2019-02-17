@@ -40,17 +40,18 @@ export class DeclarationDetailComponent implements OnInit {
             this.currentPoolList = this.fullPoolList;
             const nameParam = this.route.snapshot.paramMap.get('name')
             if (nameParam) {
-              this.getDeclaration(nameParam);
+              this.getDeclarationForEdit(nameParam);
               this.formMode = FormMode.Edit;
             }
           })
       })
   }
 
-  getDeclaration(declarationName: string): void {
+  getDeclarationForEdit(declarationName: string): void {
     this.bigIpService.getDeclaration(declarationName)
       .subscribe(declaration => {
         this.declaration = declaration;
+        this.filterPools(declaration.virtualServer);
         this.currentTrafficDist = this.distributionFactorToSliderValue(declaration.distribution);
       });
   }

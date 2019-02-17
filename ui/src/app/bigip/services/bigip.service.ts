@@ -26,7 +26,7 @@ export class BigIpService {
   saveDeclaration(declaration: Declaration): Observable<any> {
     return this.http.post(`${BASE_URI}/declare`, declaration)
       .pipe(
-        tap((status: any) => this.log(`declaration ${status.name} successfully saved`)),
+        tap((status: any) => this.log(`declaration '${status.name}' successfully saved`)),
         catchError(this.handleError<any>('saveDeclaration'))
       );
   }
