@@ -194,10 +194,10 @@ class ApiClient {
       });
   }
 
-  /** Save declaration in a datagroup. If the datagroup doesn't exist create it first with a POST */
+  /** Save declaration in a datagroup with a PATCH. If the datagroup doesn't exist create it first with a POST */
   setBlueGreenDeclaration (originalRestOp, workerContext, declaration) {
-    const putUri = workerContext.restHelper.makeRestjavadUri(`${DATA_GROUP_URI}`);
-    this.util.logDebug(`setBlueGreenDeclaration(): uri ${workerContext.restHelper.jsonPrinter(putUri)}`);
+    const patchUri = workerContext.restHelper.makeRestjavadUri(`${DATA_GROUP_URI}`);
+    this.util.logDebug(`setBlueGreenDeclaration(): uri ${workerContext.restHelper.jsonPrinter(patchUri)}`);
     return this.ensureDataGroupExists(originalRestOp, workerContext)
       .then(() => this.getAllBlueGreenDeclarations(originalRestOp, workerContext))
       .then((records) => {
@@ -206,12 +206,12 @@ class ApiClient {
         newRecordsArray.push(declaration);
         this.util.logDebug(`setBlueGreenDeclaration(): new records array ${workerContext.restHelper.jsonPrinter(newRecordsArray)}`);
 
-        return workerContext.restRequestSender.sendPut(this.getRestOperationInstance(originalRestOp, workerContext, putUri, this.buildDataGroupBody(newRecordsArray)))
+        return workerContext.restRequestSender.sendPatch(this.getRestOperationInstance(originalRestOp, workerContext, patchUri, this.buildDataGroupBody(newRecordsArray)))
           .then((resp) => {
-            this.util.logDebug(`setBlueGreenDeclaration(): PUT response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
+            this.util.logDebug(`setBlueGreenDeclaration(): PATCH response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
           })
           .catch((err) => {
-            this.util.logError(`setBlueGreenDeclaration() PUT: ${err}`);
+            this.util.logError(`setBlueGreenDeclaration() PATCH: ${err}`);
             throw err;
           });
       })
@@ -223,8 +223,8 @@ class ApiClient {
 
   /** DELETE bluegreen declaration in on the big-ip */
   deleteBlueGreenDeclaration (originalRestOp, workerContext, declarationName) {
-    const putUri = workerContext.restHelper.makeRestjavadUri(`${DATA_GROUP_URI}`);
-    this.util.logDebug(`deleteBlueGreenDeclaration(): uri ${workerContext.restHelper.jsonPrinter(putUri)}`);
+    const patchUri = workerContext.restHelper.makeRestjavadUri(`${DATA_GROUP_URI}`);
+    this.util.logDebug(`deleteBlueGreenDeclaration(): uri ${workerContext.restHelper.jsonPrinter(patchUri)}`);
     return this.ensureDataGroupExists(originalRestOp, workerContext)
       .then(() => this.getAllBlueGreenDeclarations(originalRestOp, workerContext))
       .then((records) => {
@@ -232,12 +232,12 @@ class ApiClient {
         const newRecordsArray = records.filter(f => f.name !== declarationName);
         this.util.logDebug(`deleteBlueGreenDeclaration(): new records array ${workerContext.restHelper.jsonPrinter(newRecordsArray)}`);
 
-        return workerContext.restRequestSender.sendPut(this.getRestOperationInstance(originalRestOp, workerContext, putUri, this.buildDataGroupBody(newRecordsArray)))
+        return workerContext.restRequestSender.sendPatch(this.getRestOperationInstance(originalRestOp, workerContext, patchUri, this.buildDataGroupBody(newRecordsArray)))
           .then((resp) => {
-            this.util.logDebug(`deleteBlueGreenDeclaration(): PUT response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
+            this.util.logDebug(`deleteBlueGreenDeclaration(): PATCH response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
           })
           .catch((err) => {
-            this.util.logError(`deleteBlueGreenDeclaration() PUT: ${err}`);
+            this.util.logError(`deleteBlueGreenDeclaration() PATCH: ${err}`);
             throw err;
           });
       })
