@@ -117,7 +117,14 @@ class ApiClient {
   /** build blue-green objects on the big-ip */
   buildBlueGreenObjects (originalRestOp, workerContext, declaration) {
     this.util.logDebug(`buildBlueGreenObjects(): Declaration: ${workerContext.restHelper.jsonPrinter(declaration)}`);
-    return this.setBlueGreenDeclaration(originalRestOp, workerContext, declaration)
+    return this.getBlueGreenDeclaration(originalRestOp, workerContext, declaration.name)
+      .then((originalDeclaration) => {
+        // if the virtual server is changing for this declaration, unshim the iRule from the previous virtual server
+        if (!this.util.isEmptyObject(originalDeclaration) && originalDeclaration.virtualServer.toLowerCase() !== declaration.virtualServer.toLowerCase()) {
+          return this.unShimIRule(originalRestOp, workerContext, originalDeclaration.virtualServer)
+        }
+      })
+      .then(() => this.setBlueGreenDeclaration(originalRestOp, workerContext, declaration))
       .then(() => {
         // check if the irule is present, and plug it in!
         this.util.logDebug(`buildBlueGreenObjects(): Ready to shim`);
@@ -171,8 +178,8 @@ class ApiClient {
     return this.getAllBlueGreenDeclarations(originalRestOp, workerContext)
       .then((declarations) => {
         const conflictingDeclaration = declarations.find(declaration =>
-          declaration.name !== declarationToCheck.name &&
-          declaration.virtualServer === declarationToCheck.virtualServer);
+          declaration.name.toLowerCase() !== declarationToCheck.name.toLowerCase() &&
+          declaration.virtualServer.toLowerCase() === declarationToCheck.virtualServer.toLowerCase());
         return { conflict: conflictingDeclaration !== undefined, reference: conflictingDeclaration };
       })
       .catch((err) => {
@@ -460,7 +467,7 @@ class ApiClient {
     this.util.logDebug(`virtualServerHasHttpProfile(): virtualServer ${JSON.stringify(virtualServer)}`);
     // eslint-disable-next-line no-useless-escape
     const pattern = new RegExp('\/ltm\/profile\/http\/');
-    return profilesArray.filter(p => this.util.safeAccess(() => p.nameReference.link, false) && pattern.test(p.nameReference.link)).length > 0;
+    return profilesArray.filter(p => this.util.safeAccess(() => p.nameReference.link, false) && pattern.test(p.nameReference.link.toLowerCase())).length > 0;
   }
 }
 
