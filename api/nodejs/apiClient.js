@@ -58,8 +58,8 @@ class ApiClient {
   }
 
   /** GET virtual server by full path from the big-ip */
-  getVirtualServer (originalRestOp, workerContext, virtualServerFullPath) {
-    const vsNamePath = this.convertPathForQuery(virtualServerFullPath);
+  getVirtualServer (originalRestOp, workerContext, virtualServer) {
+    const vsNamePath = this.convertPathForQuery(virtualServer);
     const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/virtual/${vsNamePath}`, 'expandSubcollections=true&$select=name,fullPath,profilesReference/items/nameReference/link');
     return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
       .then((response) => {
@@ -121,7 +121,7 @@ class ApiClient {
       .then(() => {
         // check if the irule is present, and plug it in!
         this.util.logDebug(`buildBlueGreenObjects(): Ready to shim`);
-        return this.shimIRule(originalRestOp, workerContext, declaration.virtualServerFullPath);
+        return this.shimIRule(originalRestOp, workerContext, declaration.virtualServer);
       })
       .catch((err) => {
         this.util.logError(`buildBlueGreenObjects(): ${err}`);
@@ -172,7 +172,7 @@ class ApiClient {
       .then((declarations) => {
         const conflictingDeclaration = declarations.find(declaration =>
           declaration.name !== declarationToCheck.name &&
-          declaration.virtualServerFullPath === declarationToCheck.virtualServerFullPath);
+          declaration.virtualServer === declarationToCheck.virtualServer);
         return { conflict: conflictingDeclaration !== undefined, reference: conflictingDeclaration };
       })
       .catch((err) => {
@@ -306,7 +306,7 @@ class ApiClient {
       });
   }
 
-  shimIRule (originalRestOp, workerContext, virtualServerFullPath) {
+  shimIRule (originalRestOp, workerContext, virtualServer) {
     // Check to make sure the shim irule exists first
     return this.shimIRuleExists(originalRestOp, workerContext)
       .then((exists) => {
@@ -316,8 +316,8 @@ class ApiClient {
         }
       })
       .then(() => {
-        this.util.logDebug(`shimIRule(): in second then() vsfullpath: ${workerContext.restHelper.jsonPrinter(virtualServerFullPath)}`);
-        return this.getIRulesByVirtualServer(originalRestOp, workerContext, virtualServerFullPath);
+        this.util.logDebug(`shimIRule(): in second then() vsfullpath: ${workerContext.restHelper.jsonPrinter(virtualServer)}`);
+        return this.getIRulesByVirtualServer(originalRestOp, workerContext, virtualServer);
       })
       .then((rules) => {
         this.util.logDebug(`shimIRule(): in third then()`);
@@ -326,7 +326,7 @@ class ApiClient {
         if (existingIRules.indexOf(SHIM_IRULE_FULLPATH) === -1) {
           existingIRules.push(SHIM_IRULE_FULLPATH);
           this.util.logDebug(`shimIRule(): after irule push ${workerContext.restHelper.jsonPrinter(existingIRules)}`);
-          return this.setIRulesByVirtualServer(originalRestOp, workerContext, virtualServerFullPath, existingIRules);
+          return this.setIRulesByVirtualServer(originalRestOp, workerContext, virtualServer, existingIRules);
         }
         return existingIRules;
       })
@@ -337,8 +337,8 @@ class ApiClient {
   }
 
   /** GET irules bound to a virtual server from the big-ip */
-  getIRulesByVirtualServer (originalRestOp, workerContext, virtualServerFullPath) {
-    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/virtual/${this.convertPathForQuery(virtualServerFullPath)}`, '$select=rules');
+  getIRulesByVirtualServer (originalRestOp, workerContext, virtualServer) {
+    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/virtual/${this.convertPathForQuery(virtualServer)}`, '$select=rules');
     this.util.logDebug(`getIRulesByVirtualServer(): uri ${workerContext.restHelper.jsonPrinter(uri)}`);
     return workerContext.restRequestSender.sendGet(this.getRestOperationInstance(originalRestOp, workerContext, uri))
       .then((data) => data.body['rules'])
@@ -349,8 +349,8 @@ class ApiClient {
   }
 
   /** PATCH irules bound to a virtual server from the big-ip */
-  setIRulesByVirtualServer (originalRestOp, workerContext, virtualServerFullPath, iRules) {
-    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/virtual/${this.convertPathForQuery(virtualServerFullPath)}`);
+  setIRulesByVirtualServer (originalRestOp, workerContext, virtualServer, iRules) {
+    const uri = workerContext.restHelper.makeRestjavadUri(`/mgmt/tm/ltm/virtual/${this.convertPathForQuery(virtualServer)}`);
     const rules = { rules: iRules };
     this.util.logDebug(`setIRulesByVirtualServer(): uri ${workerContext.restHelper.jsonPrinter(uri)} rules ${workerContext.restHelper.jsonPrinter(rules)}`);
     return workerContext.restRequestSender.sendPatch(this.getRestOperationInstance(originalRestOp, workerContext, uri, rules))
@@ -368,7 +368,7 @@ class ApiClient {
     return this.getBlueGreenDeclaration(originalRestOp, workerContext, declarationName)
       .then((declaration) => {
         const deleteBlueGreenDeclarationPromise = this.deleteBlueGreenDeclaration(originalRestOp, workerContext, declaration.name);
-        const unShimIRulePromise = this.unShimIRule(originalRestOp, workerContext, declaration.virtualServerFullPath);
+        const unShimIRulePromise = this.unShimIRule(originalRestOp, workerContext, declaration.virtualServer);
         return Promise.all([deleteBlueGreenDeclarationPromise, unShimIRulePromise]);
       })
       .catch((err) => {
@@ -383,14 +383,14 @@ class ApiClient {
     return workerContext.restRequestSender.sendDelete(this.getRestOperationInstance(originalRestOp, workerContext, uri));
   }
 
-  unShimIRule (originalRestOp, workerContext, virtualServerFullPath) {
-    this.util.logDebug(`unShimIRule(): virtualServer ${virtualServerFullPath}`);
-    return this.getIRulesByVirtualServer(originalRestOp, workerContext, virtualServerFullPath)
+  unShimIRule (originalRestOp, workerContext, virtualServer) {
+    this.util.logDebug(`unShimIRule(): virtualServer ${virtualServer}`);
+    return this.getIRulesByVirtualServer(originalRestOp, workerContext, virtualServer)
       .then((data) => {
         let iRules = data || [];
         if (iRules.indexOf(SHIM_IRULE_FULLPATH) !== -1) {
           iRules = iRules.filter(v => v !== SHIM_IRULE_FULLPATH);
-          return this.setIRulesByVirtualServer(originalRestOp, workerContext, virtualServerFullPath, iRules);
+          return this.setIRulesByVirtualServer(originalRestOp, workerContext, virtualServer, iRules);
         }
         return iRules;
       })
@@ -425,7 +425,7 @@ class ApiClient {
   buildDGRecordFromDeclaration (declaration) {
     return {
       'name': declaration.name,
-      'data': `${declaration.virtualServerFullPath},${declaration.distribution},${declaration.bluePool},${declaration.greenPool}`
+      'data': `${declaration.virtualServer},${declaration.distribution},${declaration.bluePool},${declaration.greenPool}`
     };
   }
 
@@ -433,7 +433,7 @@ class ApiClient {
     const dArray = record.data.split(',');
     return {
       name: record.name,
-      virtualServerFullPath: dArray[0],
+      virtualServer: dArray[0],
       distribution: Number(dArray[1]),
       bluePool: dArray[2],
       greenPool: dArray[3]

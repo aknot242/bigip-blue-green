@@ -5,7 +5,7 @@
   "title": "The Root Schema",
   "required": [
     "name",
-    "virtualServerFullPath",
+    "virtualServer",
     "distribution",
     "bluePool",
     "greenPool"
@@ -21,8 +21,8 @@
       ],
       "pattern": "^[A-Za-z][0-9A-Za-z_-]{0,47}$"
     },
-    "virtualServerFullPath": {
-      "$id": "#/properties/virtualServerFullPath",
+    "virtualServer": {
+      "$id": "#/properties/virtualServer",
       "type": "string",
       "title": "The Virtual Server Schema",
       "default": "",

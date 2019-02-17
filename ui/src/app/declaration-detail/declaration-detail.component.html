@@ -16,7 +16,7 @@
     <div>
       <mat-form-field>
         <mat-select style="width:460px" placeholder="Virtual Server" (ngModelChange)="filterPools($event)" matNativeControl required
-          [(ngModel)]="declaration.virtualServerFullPath" name="selectedVirtualServer">
+          [(ngModel)]="declaration.virtualServer" name="selectedVirtualServer">
           <mat-option *ngFor="let virtualServer of virtualServerList" [value]="virtualServer">
             {{ virtualServer }}
           </mat-option>

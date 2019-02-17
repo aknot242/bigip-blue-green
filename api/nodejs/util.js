@@ -149,9 +149,9 @@ class Util {
       {
         name: 'pool-must-be-accessible-to-virtual-server',
         check: poolRef => {
-          if (declaration.virtualServerFullPath === undefined) return false;
+          if (declaration.virtualServer === undefined) return false;
           const poolPartition = this.getLowerCasePartition(poolRef);
-          return poolPartition === this.getLowerCasePartition(declaration.virtualServerFullPath) || poolPartition === COMMON_PARTITION.toLowerCase()
+          return poolPartition === this.getLowerCasePartition(declaration.virtualServer) || poolPartition === COMMON_PARTITION.toLowerCase()
         }
       }];
   }

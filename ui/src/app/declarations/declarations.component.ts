@@ -13,7 +13,7 @@ import { ConfirmDialog } from '../dialogs/confirm-dialog';
   styleUrls: ['./declarations.component.css']
 })
 export class DeclarationsComponent implements OnInit {
-  displayedColumns: string[] = ['name', 'virtualServerFullPath', 'action'];
+  displayedColumns: string[] = ['name', 'virtualServer', 'action'];
   declarations: Observable<Declaration[]>;
 
   constructor(private bigIpService: BigIpService,

@@ -1,6 +1,6 @@
 export class Declaration {
   name: string;
-  virtualServerFullPath: string;
+  virtualServer: string;
   distribution: number;
   bluePool: string;
   greenPool: string;

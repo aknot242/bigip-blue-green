@@ -154,7 +154,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"Sample1\",\n    \"virtualServerFullPath\": \"/Common/MyVirtualServer\",\n    \"distribution\": 0.8,\n    \"bluePool\": \"/Common/blue_pool\",\n    \"greenPool\": \"/Common/green_pool\"\n}"
+					"raw": "{\n    \"name\": \"Sample1\",\n    \"virtualServer\": \"/Common/MyVirtualServer\",\n    \"distribution\": 0.8,\n    \"bluePool\": \"/Common/blue_pool\",\n    \"greenPool\": \"/Common/green_pool\"\n}"
 				},
 				"url": {
 					"raw": "https://{{bigip_a_mgmt}}/mgmt/shared/blue-green/declare",

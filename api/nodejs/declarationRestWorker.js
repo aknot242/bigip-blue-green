@@ -41,7 +41,7 @@ class DeclarationRestWorker {
           throw new Error(`Schema invalid blue-green declaration: ${validatedDeclaration.message}`);
         }
       })
-      .then(() => this.apiClient.getVirtualServer(restOperation, workerContext, declaration.virtualServerFullPath))
+      .then(() => this.apiClient.getVirtualServer(restOperation, workerContext, declaration.virtualServer))
       .then((vs) => {
         if (this.util.isEmptyObject(vs)) {
           throw new Error('Virtual Server does not exist.');
@@ -111,7 +111,7 @@ class DeclarationRestWorker {
   getExampleState () {
     const example = {
       'name': 'Sample1',
-      'virtualServerFullPath': '/Common/MyVirtualServer',
+      'virtualServer': '/Common/MyVirtualServer',
       'distribution': 0.8,
       'bluePool': '/Common/blue_pool',
       'greenPool': '/Common/green_pool'
