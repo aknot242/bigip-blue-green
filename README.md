@@ -5,8 +5,8 @@ An iControl LX application and API to distribute traffic between application ser
 
 
 There are 2 methods to configure BIG-IP BlueGreen: 
-* Using the user interface
-* Using the declarative API
+* A web user interface
+* Declarative REST API
 
 A BlueGreen traffic distribution rule consists of 5 elements:
 1. **name** - The name of the BlueGreen declaration. This is used as a unique key for creation, modification and deletion of BlueGreen declarations.
@@ -16,7 +16,7 @@ A BlueGreen traffic distribution rule consists of 5 elements:
     * /Common/VirtualServer
     * /DVWA/Application1/serviceMain (this format is common when using an [Application Services 3](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extension/latest/) declaration)
 
-3. **distribution** - A decimal value between 0.0 and 1.0 representing the amount of clients to direct to the _Blue_ pool. Think of this value as a percentage, as is expressed this way in the BlueGreen UI. The remainder of the distribution percentage is used to represent the percentage of traffic that will be directed to the _Green_ pool. Example: with a distribution value of 0.2, **20%** of clients will be directed to the pool identified as **bluePool**; the remaining **80%** of clients will be directed to the **greenPool**.
+3. **distribution** - A decimal value between 0.0 and 1.0 representing the amount of clients to direct to the _Blue_ pool. Think of this value as a percentage. In fact, it is expressed this way in the BlueGreen UI. The remainder of the distribution percentage is used to represent the percentage of traffic that will be directed to the _Green_ pool. Example: with a distribution value of 0.2, **20%** of clients will be directed to the pool identified as **bluePool**; the remaining **80%** of clients will be directed to the **greenPool**.
 
 4. **bluePool** - The full path to a pool that typically represents a collection of servers running an _older_ version of an application. The full path of a pool can consist of a partition followed by a pool name, or can contain partition name, application name and pool name.
   Examples:
@@ -82,7 +82,7 @@ Use [directions](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extensi
   ```
   {
       "name": "Sample1",
-      "virtualServerFullPath": "/Common/MyVirtualServer",
+      "virtualServer": "/Common/MyVirtualServer",
       "distribution": 0.8,
       "bluePool": "/Common/blue_pool",
       "greenPool": "/Common/green_pool"
@@ -97,8 +97,11 @@ Use [directions](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extensi
 
 ## Screenshots
 ### User Interface
+
+#### Declaration list page
 <img src="images/ui-screenshot-1.png" style="width:900px">
 
+#### Declaration details page
 <img src="images/ui-screenshot-2.png" style="width:900px">
 
 ### Using the API to POST a declaration using Postman
