@@ -58,7 +58,7 @@ Use [directions](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extensi
 
 
 ## Usage
- 
+
 ### Limitations
 * Since the current implementation uses a form of cookie persistence, the configured Virtual Server must utilize an HTTP Profile. If an HTTP Profile is not set for a Virtual Server, this Virtual Server will not appear in the user interface, and any declarations using this Virtual Server will not be permitted when using the API.
 * Virtual servers in custom partitions can only be configured to utilize pools in their own partition, or in the **Common** partition.
@@ -107,6 +107,6 @@ Use [directions](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extensi
 ## RPM Package Build
 Building the project requires Docker to be installed on the host system. The build script is a bash script that can be invoked from the project root by executing `build/build.sh` in a terminal. Once the build is successful, the RPM and sha256 file can be found in `build/rpmbuild/RPMS/noarch`.
 
- ## Credits
- - Core load balancing logic based on hoolio's [ratio load balancing using rand function](https://devcentral.f5.com/codeshare/ratio-load-balancing-using-rand-function) implementation
- - Icon based on a rotated version of https://commons.wikimedia.org/wiki/File:Blue_green_cyan_nevit_116.svg
+## Credits
+- Core load balancing logic based on hoolio's [ratio load balancing using rand function](https://devcentral.f5.com/codeshare/ratio-load-balancing-using-rand-function) implementation
+- Icon based on a rotated version of https://commons.wikimedia.org/wiki/File:Blue_green_cyan_nevit_116.svg
