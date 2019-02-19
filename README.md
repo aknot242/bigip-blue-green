@@ -111,5 +111,6 @@ Use [directions](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extensi
 Building the project requires Docker to be installed on the host system. The build script is a bash script that can be invoked from the project root by executing `build/build.sh` in a terminal. Once the build is successful, the RPM and sha256 file can be found in `build/rpmbuild/RPMS/noarch`.
 
 ## Credits
+- Many thanks to [npearce](https://github.com/npearce) for helping me understand the possibilities in management/control plane extensibility of the BIG-IP platform as well as helping me through some of the less-traveled areas of the iControl LX APIs :). Check out some of his other projects such as [BigStats](https://github.com/f5devcentral/BigStats) and [CaC-Github_Webhook_Server](https://github.com/f5devcentral/CaC-Github_Webhook_Server)!
 - Core load balancing logic based on hoolio's [ratio load balancing using rand function](https://devcentral.f5.com/codeshare/ratio-load-balancing-using-rand-function) implementation
 - Icon based on a rotated version of https://commons.wikimedia.org/wiki/File:Blue_green_cyan_nevit_116.svg
