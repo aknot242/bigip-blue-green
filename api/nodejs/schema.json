@@ -35,6 +35,8 @@
       "$id": "#/properties/distribution",
       "type": "number",
       "title": "The Distribution Schema",
+      "minimum": 0.0,
+      "maximum": 1.0,
       "default": 0.0,
       "examples": [
         0.5

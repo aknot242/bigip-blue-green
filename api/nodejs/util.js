@@ -86,10 +86,10 @@ class Util {
         } else {
           message = 'Unknown validation error.';
         }
-        reject({ isValid: false, message: message, json: jsonInput });
+        reject(new Error(`Schema invalid blue-green declaration: ${message}`));
       }
       this.logDebug(`validateDeclaration(): ${message}`);
-      resolve({ isValid: true, message: message, json: jsonInput });
+      resolve(jsonInput);
     });
   }
 
@@ -102,6 +102,8 @@ class Util {
     switch (errorDetail.keyword) {
       case 'enum':
         return `${errorDetail.dataPath} ${errorDetail.message}. Specified value: ${errorDetail.data} (allowed value(s) are ${errorDetail.params.allowedValues}`;
+      case 'required':
+        return errorDetail.message;
       default:
         return `${errorDetail.dataPath} ${errorDetail.message}`;
     }
@@ -136,12 +138,12 @@ class Util {
       return pjson.version;
     } catch (err) {
       this.logError(`Unable to determine API package version: ${err}`);
-      return "UNKNOWN";
+      return 'UNKNOWN';
     }
   }
 
   getLowerCasePartition (fullPath) {
-    return fullPath.split('/')[1].toLowerCase()
+    return fullPath.split('/')[1].toLowerCase();
   }
 
   getSchemaFormats (declaration) {
@@ -151,24 +153,10 @@ class Util {
         check: poolRef => {
           if (declaration.virtualServer === undefined) return false;
           const poolPartition = this.getLowerCasePartition(poolRef);
-          return poolPartition === this.getLowerCasePartition(declaration.virtualServer) || poolPartition === COMMON_PARTITION.toLowerCase()
+          return poolPartition === this.getLowerCasePartition(declaration.virtualServer) || poolPartition === COMMON_PARTITION.toLowerCase();
         }
       }];
   }
-
-  /**
-  * Safely access object and property values without having to stack up safety checks for undefined values
-  * @param {*} func A function that encloses the value to check
-  * @param {*} fallbackValue An optional default value that is returned if any of the values in the object heirarchy are undefined. If this parameter isn't supplied, undefined will be returned instead of a default fallback value.
-  */
-  safeAccess (func, fallbackValue) {
-    try {
-      var value = func();
-      return (value === null || value === undefined) ? fallbackValue : value;
-    } catch (e) {
-      return fallbackValue;
-    }
-  };
 }
 
 module.exports = Util;

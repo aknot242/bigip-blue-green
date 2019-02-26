@@ -1,4 +1,7 @@
 'use strict';
+const fs = require('fs');
+const path = require('path');
+const handlebars = require('handlebars');
 const Util = require('./util');
 
 const DEFAULT_PARTITION = 'Common';
@@ -8,6 +11,7 @@ const DATA_GROUP_URI = `${BASE_DATA_GROUP_URI}/~${DEFAULT_PARTITION}~${DATA_GROU
 const SHIM_IRULE_NAME = '_bigip_blue_green';
 const SHIM_IRULE_FULLPATH = `/${DEFAULT_PARTITION}/${SHIM_IRULE_NAME}`;
 const COOKIE_PREFIX = 'bg';
+const IRULE_FILE = './irule-template.tcl';
 
 class ApiClient {
   constructor () {
@@ -125,10 +129,13 @@ class ApiClient {
         }
       })
       .then(() => this.setBlueGreenDeclaration(originalRestOp, workerContext, declaration))
-      .then(() => {
-        // check if the irule is present, and plug it in!
-        this.util.logDebug(`buildBlueGreenObjects(): Ready to shim`);
-        return this.shimIRule(originalRestOp, workerContext, declaration.virtualServer);
+      .then(() => this.iRuleIsShimmed(originalRestOp, workerContext, declaration.virtualServer))
+      .then((shimmed) => {
+        if (!shimmed) { 
+          // check if the irule is present, and plug it in!
+          this.util.logDebug(`buildBlueGreenObjects(): Ready to shim`);
+          return this.shimIRule(originalRestOp, workerContext, declaration.virtualServer);
+        }
       })
       .catch((err) => {
         this.util.logError(`buildBlueGreenObjects(): ${err}`);
@@ -287,7 +294,8 @@ class ApiClient {
   createShimIRule (originalRestOp, workerContext) {
     const uri = workerContext.restHelper.makeRestjavadUri('/mgmt/tm/ltm/rule/');
     this.util.logDebug(`createShimIRule(): at start`);
-    return workerContext.restRequestSender.sendPost(this.getRestOperationInstance(originalRestOp, workerContext, uri, this.buildIRuleBody(SHIM_IRULE_FULLPATH)))
+    return this.buildIRuleBody(SHIM_IRULE_FULLPATH)
+      .then((ruleBody) => workerContext.restRequestSender.sendPost(this.getRestOperationInstance(originalRestOp, workerContext, uri, ruleBody)))
       .then((resp) => {
         this.util.logDebug(`createShimIRule(): POST response ${workerContext.restHelper.jsonPrinter(resp.body)}`);
         return resp.body;
@@ -339,6 +347,20 @@ class ApiClient {
       })
       .catch((err) => {
         this.util.logError(`shimIRule(): ${err}`);
+        throw err;
+      });
+  }
+
+  iRuleIsShimmed (originalRestOp, workerContext, virtualServer) {
+    // Check to make sure the shim irule exists first
+    return this.getIRulesByVirtualServer(originalRestOp, workerContext, virtualServer)
+      .then((rules) => {
+        let existingIRules = rules || [];
+        this.util.logDebug(`iRuleIsShimmed(): getIRulesByVirtualServer response ${workerContext.restHelper.jsonPrinter(existingIRules)}`);
+        return existingIRules.indexOf(SHIM_IRULE_FULLPATH) >= 0;
+      })
+      .catch((err) => {
+        this.util.logError(`iRuleIsShimmed(): ${err}`);
         throw err;
       });
   }
@@ -408,12 +430,21 @@ class ApiClient {
   }
 
   buildIRuleBody (shimIRuleFullPath) {
-    return {
-      'kind': 'tm:ltm:rule:rulestate',
-      'name': SHIM_IRULE_NAME,
-      'fullPath': shimIRuleFullPath,
-      'apiAnonymous': `# API Version ${this.util.getApiVersion()}\nproc get_datagroup_value {dg_name vs_full_path} {\n    set dg [class get $dg_name]\n    foreach x $dg {\n        if { $x starts_with $vs_full_path} {\n            return $x\n            break\n        }\n    }\n}\n\nproc get_cookie_name {vs_full_path}   {\n    return "${COOKIE_PREFIX}[string map "/ _" $vs_full_path]"\n}\n\nwhen HTTP_REQUEST {\n    # Use this to set the cookie name as well as to look up the distribution and pool name settings from the datagroup\n    set traffic_dist_rule [call get_datagroup_value "${DATA_GROUP}" [virtual name]]\n    set fields [split $traffic_dist_rule ","]\n    set vs [lindex $fields 0]\n    set distribution [lindex $fields 1]\n    set blue_pool [lindex $fields 2]\n    set green_pool [lindex $fields 3]\n    set blue_green_cookie [call get_cookie_name $vs]\n\n    # Check if there is a pool selector cookie in the request\n    if { [HTTP::cookie exists $blue_green_cookie] } {\n    \n        # Select the pool from the cookie\n        pool [HTTP::cookie $blue_green_cookie]\n        set selected ""\n    } else {\n    \n        # No pool selector cookie, so choose a pool based on the datagroup distribution\n        set rand [expr { rand() }]\n    \n        if { $rand < $distribution } { \n            pool $blue_pool\n            set selected $blue_pool\n        } else {\n            pool $green_pool\n            set selected $green_pool\n        }\n    }\n}\n\nwhen HTTP_RESPONSE {\n     # Set a pool selector cookie from the pool that was was selected for this request\n    if {$selected ne ""}{\n        HTTP::cookie insert name $blue_green_cookie value $selected path "/"\n    }\n}`
-    };
+    return new Promise((resolve, reject) => {
+      fs.readFile(path.join(__dirname, IRULE_FILE), (err, data) => {
+        //if has error reject, otherwise resolve
+        if (err) reject(err);
+        const template = handlebars.compile(data.toString());
+        const outputString = template({ version: this.util.getApiVersion(), cookiePrefix: COOKIE_PREFIX, dataGroup: DATA_GROUP });
+        const iRule = {
+          'kind': 'tm:ltm:rule:rulestate',
+          'name': SHIM_IRULE_NAME,
+          'fullPath': shimIRuleFullPath,
+          'apiAnonymous': outputString
+        };
+        return resolve(iRule);
+      })
+    })
   }
 
   buildDataGroupBody (records) {

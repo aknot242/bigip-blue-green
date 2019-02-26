@@ -1,6 +1,6 @@
 {
   "name": "bigip-blue-green-api",
-  "version": "0.8.5",
+  "version": "0.9.0",
   "description": "API for bigip-blue-green",
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
     "eslint-plugin-standard": "^4.0.0"
   },
   "dependencies": {
-    "ajv": "^6.7.0"
+    "ajv": "^6.7.0",
+    "handlebars": "^4.1.0"
   }
 }

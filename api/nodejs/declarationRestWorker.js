@@ -34,12 +34,8 @@ class DeclarationRestWorker {
 
     this.util.validateDeclaration(declaration)
       .then((validatedDeclaration) => {
-        if (validatedDeclaration.isValid) {
-          this.util.logInfo('Schema valid blue-green declaration');
-          declaration = validatedDeclaration.json;
-        } else {
-          throw new Error(`Schema invalid blue-green declaration: ${validatedDeclaration.message}`);
-        }
+        this.util.logInfo('Schema valid blue-green declaration');
+        declaration = validatedDeclaration;
       })
       .then(() => this.apiClient.getVirtualServer(restOperation, workerContext, declaration.virtualServer))
       .then((vs) => {

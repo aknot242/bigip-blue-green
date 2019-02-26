@@ -1,0 +1,1 @@
+docker run --rm -it -e ATTACKED_HOST="https://f5demo.com" -v $(pwd):/locust -p 8089:8089 ignatisd/locustio

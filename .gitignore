@@ -37,6 +37,7 @@ npm-debug.log
 yarn-error.log
 testem.log
 /ui/typings
+__pycache__
 
 # System Files
 .DS_Store

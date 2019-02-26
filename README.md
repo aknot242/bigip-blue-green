@@ -1,7 +1,11 @@
 # BIG-IP BlueGreen
 An iControl LX application and API to distribute traffic between application server pools based on a percentage. The API is implemented in Javascript/NodeJS and runs on a BIG-IP as an [iControl LX](https://clouddocs.f5.com/products/iapp/iapp-lx/tmos-14_0/) application. The user interface is written in [TypeScript](https://www.typescriptlang.org/) and [Angular](https://angular.io/) with [Material](https://material.angular.io/components/select/overview). A simple load test implemented in [Locust](https://locust.io/) (for now).
 
+Currently, the solution only supports HTTP(S) applications and requires the use of cookies in order to work most efficiently. As such, a virtual server referenced in a BlueGreen declaration is required to have an HTTP Profile attached to it. Once a client has been assigned to a pool at runtime, a cookie is sent to the client in order to continue sending the client to the same pool on subsequent requests. The expiration ofthe cookie is fixed at 20 minutes from time of issue. If using a distribution value of 0.0 or 1.0, all requests will be sent to the Blue Pool or Green Pool respectively, and no cookie will be issued.
+
+
 <img src="images/diagram.png" style="width:900px">
+
 
 
 There are 2 methods to configure BIG-IP BlueGreen: 
@@ -109,6 +113,14 @@ Use [directions](https://clouddocs.f5.com/products/extensions/f5-appsvcs-extensi
 
 ## RPM Package Build
 Building the project requires Docker to be installed on the host system. The build script is a bash script that can be invoked from the project root by executing `build/build.sh` in a terminal. Once the build is successful, the RPM and sha256 file can be found in `build/rpmbuild/RPMS/noarch`.
+
+## Load Testing
+This project uses the [Locust](https://locust.io/) framework. For ease of setup and execution, [Docker](https://www.docker.com/) is utilized to host the testing runtime. Make sure Docker is installed on your host. Update the content checks in the [locustfile.py](load/locustfile.py) and update the URL in [run-load-test.sh](load/run-load-test.sh). To execute:
+```
+cd load
+./run-load-test.sh
+```
+Once the Docker container is running, open http://localhost:8089/ in your browser to configure the load test parameters.
 
 ## Credits
 - Many thanks to [npearce](https://github.com/npearce) for helping me understand the possibilities in management/control plane extensibility of the BIG-IP platform as well as helping me through some of the less-traveled areas of the iControl LX APIs :). Check out some of his other projects such as [BigStats](https://github.com/f5devcentral/BigStats) and [CaC-Github_Webhook_Server](https://github.com/f5devcentral/CaC-Github_Webhook_Server)!
