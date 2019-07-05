@@ -1,6 +1,8 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DeclarationsComponent } from './declarations.component';
-import { MatButtonModule, MatDialogModule, MatTableModule } from '@angular/material';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatTableModule } from '@angular/material/table';
 import { RouterTestingModule } from '@angular/router/testing';
 import { BigIpService, AuthService } from '../bigip/services';
 import { HttpClient, HttpHandler } from '@angular/common/http';

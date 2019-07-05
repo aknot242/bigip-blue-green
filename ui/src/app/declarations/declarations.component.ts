@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { MatDialog } from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
 import { switchMap, catchError } from 'rxjs/operators';
 import { BigIpService, AuthService } from '../bigip/services';
 import { Declaration } from '../bigip/models/declaration';

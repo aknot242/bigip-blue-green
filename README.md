@@ -34,7 +34,7 @@ A BlueGreen traffic distribution rule consists of 5 elements:
 
 
 ## Compatibility 
-Though not exhaustively tested on all BIG-IP versions, this solution has been reported to work on versions 13.0 - 14.1.
+Though not exhaustively tested on all BIG-IP versions, this solution has been reported to work on versions 13.0 - 15.0.
 
 ## Installation
 

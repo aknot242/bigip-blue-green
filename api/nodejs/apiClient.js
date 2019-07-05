@@ -125,13 +125,13 @@ class ApiClient {
       .then((originalDeclaration) => {
         // if the virtual server is changing for this declaration, unshim the iRule from the previous virtual server
         if (!this.util.isEmptyObject(originalDeclaration) && originalDeclaration.virtualServer.toLowerCase() !== declaration.virtualServer.toLowerCase()) {
-          return this.unShimIRule(originalRestOp, workerContext, originalDeclaration.virtualServer)
+          return this.unShimIRule(originalRestOp, workerContext, originalDeclaration.virtualServer);
         }
       })
       .then(() => this.setBlueGreenDeclaration(originalRestOp, workerContext, declaration))
       .then(() => this.iRuleIsShimmed(originalRestOp, workerContext, declaration.virtualServer))
       .then((shimmed) => {
-        if (!shimmed) { 
+        if (!shimmed) {
           // check if the irule is present, and plug it in!
           this.util.logDebug(`buildBlueGreenObjects(): Ready to shim`);
           return this.shimIRule(originalRestOp, workerContext, declaration.virtualServer);
@@ -432,7 +432,7 @@ class ApiClient {
   buildIRuleBody (shimIRuleFullPath) {
     return new Promise((resolve, reject) => {
       fs.readFile(path.join(__dirname, IRULE_FILE), (err, data) => {
-        //if has error reject, otherwise resolve
+        // if has error reject, otherwise resolve
         if (err) reject(err);
         const template = handlebars.compile(data.toString());
         const outputString = template({ version: this.util.getApiVersion(), cookiePrefix: COOKIE_PREFIX, dataGroup: DATA_GROUP });
@@ -443,8 +443,8 @@ class ApiClient {
           'apiAnonymous': outputString
         };
         return resolve(iRule);
-      })
-    })
+      });
+    });
   }
 
   buildDataGroupBody (records) {
