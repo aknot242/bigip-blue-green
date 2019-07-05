@@ -124,5 +124,5 @@ Once the Docker container is running, open http://localhost:8089/ in your browse
 
 ## Credits
 - Many thanks to [npearce](https://github.com/npearce) for helping me understand the possibilities in management/control plane extensibility of the BIG-IP platform as well as helping me through some of the less-traveled areas of the iControl LX APIs :). Check out some of his other projects such as [BigStats](https://github.com/f5devcentral/BigStats) and [CaC-Github_Webhook_Server](https://github.com/f5devcentral/CaC-Github_Webhook_Server)!
-- Core load balancing logic based on hoolio's [ratio load balancing using rand function](https://devcentral.f5.com/codeshare/ratio-load-balancing-using-rand-function) implementation
+- Core load balancing logic based on [Kevin Davies](https://devcentral.f5.com/users/40632)' [rand function solution](https://devcentral.f5.com/questions/IRule-Creation-help#1196453) on [F5 DevCentral](https://devcentral.f5.com)
 - Icon based on a rotated version of https://commons.wikimedia.org/wiki/File:Blue_green_cyan_nevit_116.svg
