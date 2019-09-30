@@ -1,6 +1,6 @@
 {
   "name": "bigip-blue-green-api",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "API for bigip-blue-green",
   "repository": {
     "type": "git",
@@ -22,6 +22,6 @@
   },
   "dependencies": {
     "ajv": "^6.7.0",
-    "handlebars": "^4.1.2"
+    "handlebars": "^4.3.3"
   }
 }

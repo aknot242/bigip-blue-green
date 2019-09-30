@@ -45,7 +45,7 @@ when HTTP_REQUEST {
     set cookie_exists [HTTP::cookie exists $blue_green_cookie]
     call debug_log $DEBUG "distribution: $distribution"
 
-    switch $distribution {
+    switch -- $distribution {
         "0" {
             pool $green_pool
             call debug_log $DEBUG "defaulting to green pool"
@@ -88,7 +88,7 @@ when HTTP_RESPONSE {
         HTTP::cookie insert name $blue_green_cookie value $cookie_value_to_set path "/"
         HTTP::cookie expires $blue_green_cookie $cookie_expiration_seconds relative
     } elseif {$cookie_exists && [info exists remove_cookie] } {
-        unset remove_cookie
+        unset -- remove_cookie
         # If there is no need to store a selected pool in a cookie, remove any previously stored blue-green cookie for this vs
         call debug_log $DEBUG "removing cookie $blue_green_cookie"
         HTTP::header insert Set-Cookie "$blue_green_cookie=deleted;expires=Thu, 01 Jan 1970 00:00:00 GMT"
